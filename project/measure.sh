@@ -50,24 +50,30 @@ mkdir -p $OUT
 
 advixe-cl -create-project --project-dir $PROJECT_DIR test
 
-compile $ROOFLINE -g
+compile "$ROOFLINE" -g
 roofline
 snapshot "hotspot"
 
-compile $ROOFLINE -qopt-report=3 -xHost -O3
+compile "$ROOFLINE" -qopt-report=3 -xHost -O3
 mv ./mandelbrot.optrpt $OUT
 
 
 title "Best sequential"
 
-compile $BEST_SEQUENTIAL -xHost -O3
+compile "$BEST_SEQUENTIAL" -xHost -O3
 measure best-sequential-normal
 
 compile -xHost -O3 -ffast-math
 measure best-sequential-fast-math
 
-compile $BEST_SEQUENTIAL -xHost -O3 -ffast-math -ipo
+compile "$BEST_SEQUENTIAL" -xHost -O3 -ffast-math -ipo
 measure best-sequential-fast-math-ipo
 
-compile $BEST_SEQUENTIAL -xHost -O3 -ipo
+compile "$BEST_SEQUENTIAL" -xHost -O3 -ipo
 measure best-sequential-ipo
+
+title "Best sequential roofline"
+
+compile "$ROOFLINE" -g
+roofline
+snapshot "hotspot-best-sequential"
