@@ -1,3 +1,2 @@
-
-omp:
-	bash omp.sh | tee data/omp.txt
+%:
+	bash $@.sh | tee data/$@.txt
