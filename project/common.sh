@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 source /opt/intel/oneapi/setvars.sh
 
 set -euo pipefail
@@ -33,7 +32,7 @@ function snapshot(){
 
 function measure(){
     echo "Executing"
-    time $COMPILED_FILE $PROGRAM_OUTPUT
+    time $COMPILED_FILE $PROGRAM_OUTPUT | tee "$OUT/$1"
 }
 
 function title(){

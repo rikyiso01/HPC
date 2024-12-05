@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 source /opt/intel/oneapi/setvars.sh
 
 set -euo pipefail
