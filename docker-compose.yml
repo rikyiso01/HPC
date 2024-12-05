@@ -1,0 +1,5 @@
+services:
+  intel:
+    build: .
+    volumes:
+      - ./project:/data

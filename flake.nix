@@ -15,7 +15,7 @@
         pkgs = nixpkgs.legacyPackages.${system};
       in
       {
-        devShells.default = pkgs.mkShell { packages = [ pkgs.bashInteractive pkgs.gcc ]; };
+        devShells.default = pkgs.mkShell { packages = [ pkgs.bashInteractive pkgs.gcc pkgs.docker pkgs.docker-compose ]; };
       }
     );
 }

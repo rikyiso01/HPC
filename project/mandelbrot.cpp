@@ -2,6 +2,7 @@
 #include <fstream>
 #include <complex>
 #include <chrono>
+#include <omp.h>
 
 // Ranges of the set
 #ifndef MIN_X
@@ -43,7 +44,9 @@ int main(int argc, char **argv)
 {
     int *const image = new int[HEIGHT * WIDTH];
 
-    const auto start = chrono::steady_clock::now();
+    // const auto start = chrono::steady_clock::now();
+    const auto start = omp_get_wtime();
+    // # pragma omp parallel for
     for (int pos = 0; pos < HEIGHT * WIDTH; pos++)
     {
         image[pos] = 0;
@@ -54,7 +57,6 @@ int main(int argc, char **argv)
 
         // z = z^2 + c
         complex<double> z(0, 0);
-        # pragma omp parallel for
         for (int i = 1; i <= ITERATIONS; i++)
         {
             z = pow(z, DEGREE) + c;
@@ -67,10 +69,12 @@ int main(int argc, char **argv)
             }
         }
     }
-    const auto end = chrono::steady_clock::now();
-    cout << "Time elapsed: "
-         << chrono::duration_cast<chrono::seconds>(end - start).count()
-         << " seconds." << endl;
+    // const auto end = chrono::steady_clock::now();
+    const auto end = omp_get_wtime();
+    // cout << "Time elapsed: "
+    //      << chrono::duration_cast<chrono::seconds>(end - start).count()
+    //      << " seconds." << endl;
+    cout << "Time elapsed: " << (end-start) << " seconds." << endl;
 
     // Write the result to a file
     ofstream matrix_out;
