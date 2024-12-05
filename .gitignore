@@ -4,3 +4,4 @@
 ### direnv ###
 .direnv
 .envrc
+/config
