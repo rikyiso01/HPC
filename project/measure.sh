@@ -50,7 +50,7 @@ mkdir -p $OUT
 
 advixe-cl -create-project --project-dir $PROJECT_DIR test
 
-compile ROOFLINE -g
+compile $ROOFLINE -g
 roofline
 snapshot "hotspot"
 
