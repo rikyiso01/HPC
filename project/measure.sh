@@ -63,7 +63,7 @@ title "Best sequential"
 compile "$BEST_SEQUENTIAL" -xHost -O3
 measure best-sequential-normal
 
-compile -xHost -O3 -ffast-math
+compile "$BEST_SEQUENTIAL" -xHost -O3 -ffast-math
 measure best-sequential-fast-math
 
 compile "$BEST_SEQUENTIAL" -xHost -O3 -ffast-math -ipo
