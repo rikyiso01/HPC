@@ -20,10 +20,14 @@ function compile(){
 function survey(){
     echo "Creating survey"
     advixe-cl -collect survey --project-dir $PROJECT_DIR $COMPILED_FILE $PROGRAM_OUTPUT
+    snapshot "$1"
+    measure "$1"
 }
 function roofline(){
     echo "Creating roofline"
     advixe-cl -collect roofline --project-dir $PROJECT_DIR $COMPILED_FILE $PROGRAM_OUTPUT
+    snapshot "$1"
+    measure "$1"
 }
 function snapshot(){
     echo "Creating snapshot"

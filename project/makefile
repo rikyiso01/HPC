@@ -1,2 +1,5 @@
+all: init roofline sequential best-sequential omp roofline-omp speedup
+
 %:
-	bash $@.sh | tee data/$@.txt
+	bash src/$@.sh | tee data/$@.txt
+
