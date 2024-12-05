@@ -33,7 +33,7 @@ function snapshot(){
 
 function measure(){
     echo "Executing"
-    time $COMPILED_FILE $PROGRAM_OUTPUT | tee "$OUT/$1"
+    time $COMPILED_FILE $PROGRAM_OUTPUT
 }
 
 function title(){
@@ -41,46 +41,3 @@ function title(){
     echo "$1"
     echo
 }
-
-
-
-# rm -rf $OUT
-rm -rf $PROJECT_DIR
-mkdir -p $OUT
-
-advixe-cl -create-project --project-dir $PROJECT_DIR test
-
-compile "$ROOFLINE" -g
-roofline
-snapshot "hotspot"
-
-compile "$ROOFLINE" -qopt-report=3 -xHost -O3
-mv ./mandelbrot.optrpt $OUT
-measure opt-report
-
-
-title "Best sequential"
-
-compile "$BEST_SEQUENTIAL" -xHost -O3
-measure best-sequential-normal
-
-compile "$BEST_SEQUENTIAL" -xHost -O3 -ffast-math
-measure best-sequential-fast-math
-
-compile "$BEST_SEQUENTIAL" -xHost -O3 -ffast-math -ipo
-measure best-sequential-fast-math-ipo
-
-compile "$BEST_SEQUENTIAL" -xHost -O3 -ipo
-measure best-sequential-ipo
-
-title "Best sequential roofline"
-
-compile "$ROOFLINE" -g
-roofline
-snapshot "hotspot-best-sequential"
-
-
-title "OMP parallel"
-
-compile "$OMP" -xHost -O3 -ffast-math -DOMP
-measure omp

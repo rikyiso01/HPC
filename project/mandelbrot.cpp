@@ -46,7 +46,9 @@ int main(int argc, char **argv)
 
     // const auto start = chrono::steady_clock::now();
     const auto start = omp_get_wtime();
-    // # pragma omp parallel for
+    #ifdef OMP
+    # pragma omp parallel for default(none) shared(image)
+    #endif
     for (int pos = 0; pos < HEIGHT * WIDTH; pos++)
     {
         image[pos] = 0;
