@@ -28,7 +28,11 @@
 
 #ifdef __NVCC__
 #ifndef SHARED
+#ifdef PITCH
+__global__ void step_kernel_mod(int ni, int nj, float fact, float* temp_in, float* temp_out, size_t pitch1, size_t pitch2)
+#else
 __global__ void step_kernel_mod(int ni, int nj, float fact, float* temp_in, float* temp_out)
+#endif
 {
 
   /*
@@ -47,12 +51,19 @@ __global__ void step_kernel_mod(int ni, int nj, float fact, float* temp_in, floa
 
   // evaluate derivatives
 
+  #ifndef PITCH
   d2tdx2 = temp_in[I2D(ni, x - 1, y)] - 2 * temp_in[I2D(ni, x, y)] + temp_in[I2D(ni, x + 1, y)];
   d2tdy2 = temp_in[I2D(ni, x, y - 1)] - 2 * temp_in[I2D(ni, x, y)] + temp_in[I2D(ni, x, y + 1)];
 
   // update temperatures
-  temp_out[I2D(ni, x, y)] = temp_in[I2D(ni, x, y)] /*sharedMem[I2D(BLOCK_WIDTH + 2, threadIdx.x + 1, threadIdx.y + 1)] */ + fact * (d2tdx2 + d2tdy2);
+  temp_out[I2D(ni, x, y)] = temp_in[I2D(ni, x, y)]+ fact * (d2tdx2 + d2tdy2);
+  #else
+  d2tdx2 = temp_in[I2D(pitch1, x - 1, y)] - 2 * temp_in[I2D(pitch1, x, y)] + temp_in[I2D(pitch1, x + 1, y)];
+  d2tdy2 = temp_in[I2D(pitch1, x, y - 1)] - 2 * temp_in[I2D(pitch1, x, y)] + temp_in[I2D(pitch1, x, y + 1)];
 
+  // update temperatures
+  temp_out[I2D(pitch2, x, y)] = temp_in[I2D(pitch1, x, y)] + fact * (d2tdx2 + d2tdy2);
+  #endif
 }
 #else
 __global__ void step_kernel_mod(int ni, int nj, float fact, float* temp_in, float* temp_out)
@@ -187,14 +198,19 @@ int main()
   dim3 block_size(BLOCK_WIDTH, BLOCK_HEIGHT);
   dim3 grid_size = dim3((nj - 3) / BLOCK_WIDTH + 1, (ni - 3) / BLOCK_HEIGHT + 1);
 
+  size_t pitch_tmp;
   // Execute the modified version using same data
   for (istep=0; istep < nstep; istep++) {
-    step_kernel_mod<<<grid_size, block_size>>>(ni, nj, tfac, temp1_dev, temp2_dev);
+    step_kernel_mod<<<grid_size, block_size>>>(ni, nj, tfac, temp1_dev, temp2_dev, pitch1, pitch2);
 
     // swap the temperature pointers
     temp_tmp = temp1_dev;
     temp1_dev = temp2_dev;
     temp2_dev = temp_tmp;
+
+    pitch_tmp = pitch1;
+    pitch1 = pitch2;
+    pitch2 = pitch_tmp;
   }
   cudaMemcpy(temp1, temp1_dev, size, cudaMemcpyDeviceToHost);
 
