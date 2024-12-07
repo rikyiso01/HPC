@@ -263,8 +263,8 @@ int main()
   free( temp2 );
 
 #ifdef __NVCC__
-  cudaFree(tmp1_dev);
-  cudaFree(tmp2_dev);
+  cudaFree(temp1_dev);
+  cudaFree(temp2_dev);
 #endif
 
   return 0;
