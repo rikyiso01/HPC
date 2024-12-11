@@ -1,4 +1,4 @@
-- [ ] Rifare roofline omp del progetto
-- [ ] Rifare tempo roofline normale perchè basso ma più alto del progetto
+- [x] Rifare roofline omp del progetto
+- [x] Rifare tempo roofline normale perchè basso ma più alto del progetto
 - [x] Runnare assignment 2
-- [ ] Fare speedup plot del progetto
+- [x] Fare speedup plot del progetto
