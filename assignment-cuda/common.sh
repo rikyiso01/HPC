@@ -4,8 +4,8 @@ source /opt/intel/oneapi/setvars.sh
 
 set -euo pipefail
 
-COMPILED_FILE=./mandelbrot
-SOURCE_FILE=./mandelbrot.cpp
+COMPILED_FILE=./heat
+SOURCE_FILE=./heat.c
 PROJECT_DIR=./advisor
 OUT=./data
 PROGRAM_OUTPUT=/dev/null
@@ -14,7 +14,7 @@ function compile(){
     iterations="$1"
     shift
     echo "Compiling with" "ITERATION=$iterations" "$@"
-    icpx "-DITERATIONS=$iterations" -qopenmp "$@" -o $COMPILED_FILE $SOURCE_FILE
+    icx "-DITERATIONS=$iterations" "$@" -o $COMPILED_FILE $SOURCE_FILE
 }
 
 function survey(){
