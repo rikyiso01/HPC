@@ -2,7 +2,7 @@ source ./common.sh
 
 title "Sequential"
 
-compile "$SEQUENTIAL"
+compile -O0 "$SEQUENTIAL"
 measure sequential-normal
 
 compile "$SEQUENTIAL" -xHost -O3 -ffast-math
