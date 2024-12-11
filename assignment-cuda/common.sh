@@ -33,6 +33,7 @@ function roofline(){
 }
 function snapshot(){
     echo "Creating snapshot"
+    rm -rf "$OUT/$1"
     advixe-cl -snapshot --project-dir $PROJECT_DIR "$OUT/$1"
 }
 
