@@ -176,5 +176,8 @@ int main(int argc, char **argv)
     matrix_out.close();
 
     delete[] image; // It's here for coding style, but useless
+    #ifdef __NVCC__
+    cudaFree(image_dev);
+    #endif
     return 0;
 }
