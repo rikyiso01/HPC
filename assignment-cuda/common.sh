@@ -11,10 +11,12 @@ OUT=./data
 PROGRAM_OUTPUT=/dev/null
 
 function compile(){
-    iterations="$1"
+    size="$1"
     shift
-    echo "Compiling with" "ITERATION=$iterations" "$@"
-    icx "-DITERATIONS=$iterations" "$@" -o $COMPILED_FILE $SOURCE_FILE
+    steps="$1"
+    shift
+    echo "Compiling with" "SIZE=$size" "STEPS=$steps" "$@"
+    icx "-DSIZE=$size" "-DSTEPS=$steps" "$@" -o $COMPILED_FILE $SOURCE_FILE
 }
 
 function survey(){
