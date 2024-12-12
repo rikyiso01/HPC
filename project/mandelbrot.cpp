@@ -3,7 +3,7 @@
 #include <complex>
 #include <chrono>
 #include <omp.h>
-#ifdef MPI
+#ifdef _MPI_
 #include <mpi.h>
 #endif
 
@@ -104,7 +104,7 @@ inline int* splitWorkEqually(const int id, const int processes, const int totalW
     return assignments;
 }
 
-// yes I need a prefix sum for MPI don't bother about it
+// yes I need a prefix sum for _MPI_ don't bother about it
 inline int* getPrefixSum(const int *array, int arraySize) {
 
     int *prefixSum = new int[arraySize];
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
 
     double start;
 
-    #ifdef MPI
+    #ifdef _MPI_
 
         int commSize;
         int* assignments;
@@ -152,10 +152,10 @@ int main(int argc, char **argv)
 
         start = omp_get_wtime();
         image = new int[HEIGHT * WIDTH];
-        imageBuffer = image; // this is important so that we can use the same code both with and without MPI
+        imageBuffer = image; // this is important so that we can use the same code both with and without _MPI_
     }
 
-    #ifdef MPI
+    #ifdef _MPI_
 
         // assignments and displacements are only needed by root process, but since they do not occupy 
         // much space I will free them only after the computation has completed
@@ -216,9 +216,10 @@ int main(int argc, char **argv)
     }
     #endif
 
-    #ifdef MPI
+    #ifdef _MPI_
 
-    MPI_Gatherv(imageBuffer, workSize, MPI_INT, image, assignments, displacements, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Gatherv(imageBuffer, workSize, MPI_INT, image, assignments, displacements, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Finalize();
 
     #endif
 
@@ -259,7 +260,7 @@ int main(int argc, char **argv)
         cudaFree(image_dev);
     #endif
 
-    #ifdef MPI
+    #ifdef _MPI_
         delete[] assignments;
         delete[] displacements;
         delete[] imageBuffer;
