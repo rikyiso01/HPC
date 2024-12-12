@@ -194,5 +194,6 @@ int main(int argc, char **argv)
         delete[] displacements;
         delete[] imageBuffer;
     #endif
+    
     return 0;
 }
