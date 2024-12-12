@@ -189,7 +189,7 @@ int main(int argc, char **argv)
 
     #else
     #ifdef OMP
-    # pragma omp parallel for default(none) shared(image)
+    # pragma omp parallel for default(none) shared(imageBuffer, workStart, workSize)
     #endif
     for (int j = 0; j < workSize; j++)
     {
