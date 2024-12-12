@@ -32,7 +32,7 @@
 
 // Image size
 #ifndef RESOLUTION
-#define RESOLUTION 2000
+#define RESOLUTION 1000
 #endif
 #define WIDTH (RATIO_X * RESOLUTION)
 #define HEIGHT (RATIO_Y * RESOLUTION)
@@ -43,7 +43,7 @@
 #define DEGREE 2        // Degree of the polynomial
 #endif
 #ifndef ITERATIONS
-#define ITERATIONS 10 // Maximum number of iterations
+#define ITERATIONS 10000 // Maximum number of iterations
 #endif
 
 #ifndef BLOCK_SIZE
