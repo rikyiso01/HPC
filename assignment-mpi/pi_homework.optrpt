@@ -1,0 +1,52 @@
+Global optimization report for : main
+
+LOOP BEGIN at pi_homework.c (21, 5)
+    remark #15300: LOOP WAS VECTORIZED
+    remark #15305: vectorization support: vector length 16
+    remark #15475: --- begin vector loop cost summary ---
+    remark #15476: scalar cost: 23.000000 
+    remark #15477: vector cost: 12.250000 
+    remark #15478: estimated potential speedup: 1.875000 
+    remark #15309: vectorization support: normalized vectorization overhead 0.562500
+    remark #15570: using scalar loop trip count: 6000000000
+    remark #15482: vectorized math library calls: 0 
+    remark #15484: vector function calls: 0 
+    remark #15485: serialized function calls: 0
+    remark #15488: --- end vector loop cost summary ---
+    remark #15447: --- begin vector loop memory reference summary ---
+    remark #15450: unmasked unaligned unit stride loads: 0 
+    remark #15451: unmasked unaligned unit stride stores: 0 
+    remark #15456: masked unaligned unit stride loads: 0 
+    remark #15457: masked unaligned unit stride stores: 0 
+    remark #15458: masked indexed (or gather) loads: 0 
+    remark #15459: masked indexed (or scatter) stores: 0 
+    remark #15462: unmasked indexed (or gather) loads: 0 
+    remark #15463: unmasked indexed (or scatter) stores: 0 
+    remark #15554: Unmasked VLS-optimized loads (each part of the group counted separately): 0
+    remark #15555: Masked VLS-optimized loads (each part of the group counted separately): 0
+    remark #15556: Unmasked VLS-optimized stores (each part of the group counted separately): 0
+    remark #15557: Masked VLS-optimized stores (each part of the group counted separately): 0
+    remark #15497: vector compress: 0 
+    remark #15498: vector expand: 0 
+    remark #15474: --- end vector loop memory reference summary ---
+    remark #25587: Loop has reduction
+LOOP END
+=================================================================
+
+---- Begin Inlining Report ----
+Option Values:
+  inline-threshold: 225
+  inlinehint-threshold: 325
+  inlinecold-threshold: 45
+  inlineoptsize-threshold: 15
+
+COMPILE FUNC: main
+   -> EXTERN: clock pi_homework.c (14,20)
+   -> EXTERN: printf pi_homework.c (16,5)
+   -> EXTERN: clock pi_homework.c (29,14)
+   -> EXTERN: printf pi_homework.c (31,5)
+   -> EXTERN: printf pi_homework.c (32,5)
+   -> EXTERN: printf pi_homework.c (33,5)
+   -> llvm.vector.reduce.fadd.v16f64 pi_homework.c (24,19)
+
+---- End Inlining Report ------

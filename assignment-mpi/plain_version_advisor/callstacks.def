@@ -1,0 +1,33 @@
+# callstacks file version: 8
+#    rowid	    parent	       rva	 loop	 system	                                function	binary	instance_start_rva	instance_size	instance_end_rva	finst_rowid	roi	is_inlined	jit_method_id	tripcounts_roi	flops_roi	cachesim_roi	data_transfer_roi	projection_roi
+         1	        -1	      4192	    0	      0	                                  _start	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4192	43	0	1	0	0	0	0	0	0	0	0
+         2	        -1	      4233	    0	      0	                                  _start	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4192	43	0	1	0	0	0	0	0	0	0	0
+         3	        16	    146697	    1	      1	 [Loop at line 261 in __libc_start_main]	/lib/x86_64-linux-gnu/libc.so.6	146561,146800	223,140	0	4	0	0	0	0	0	0	0	0
+         4	        18	      4632	    1	      0	               [Loop at line 21 in main]	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4537	117	4654	2	0	0	0	0	0	0	0	0
+         5	        18	      4617	    1	      0	               [Loop at line 21 in main]	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4537	117	4654	2	0	0	0	0	0	0	0	0
+         6	        18	      4622	    1	      0	               [Loop at line 21 in main]	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4537	117	4654	2	0	0	0	0	0	0	0	0
+         7	        18	      4601	    1	      0	               [Loop at line 21 in main]	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4537	117	4654	2	0	0	0	0	0	0	0	0
+         8	        18	      4605	    1	      0	               [Loop at line 21 in main]	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4537	117	4654	2	0	0	0	0	0	0	0	0
+         9	        18	      4562	    1	      0	               [Loop at line 21 in main]	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4537	117	4654	2	0	0	0	0	0	0	0	0
+        10	        18	      4637	    1	      0	               [Loop at line 21 in main]	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4537	117	4654	2	0	0	0	0	0	0	0	0
+        11	        18	      4556	    1	      0	               [Loop at line 21 in main]	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4537	117	4654	2	0	0	0	0	0	0	0	0
+        12	        18	      4641	    1	      0	               [Loop at line 21 in main]	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4537	117	4654	2	0	0	0	0	0	0	0	0
+        13	        18	      4588	    1	      0	               [Loop at line 21 in main]	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4537	117	4654	2	0	0	0	0	0	0	0	0
+        14	        18	      4613	    1	      0	               [Loop at line 21 in main]	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4537	117	4654	2	0	0	0	0	0	0	0	0
+        15	        18	      4541	    1	      0	               [Loop at line 21 in main]	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4537	117	4654	2	0	0	0	0	0	0	0	0
+        16	         2	    146561	    0	      1	                       __libc_start_main	/lib/x86_64-linux-gnu/libc.so.6	146464	476	0	5	0	0	0	0	0	0	0	0
+        17	         2	    146697	    0	      1	                       __libc_start_main	/lib/x86_64-linux-gnu/libc.so.6	146464	476	0	5	0	0	0	0	0	0	0	0
+        18	         3	      4537	    0	      0	                                    main	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4432	345	0	3	0	0	0	0	0	0	0	0
+        19	         3	      4632	    0	      0	                                    main	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4432	345	0	3	0	0	0	0	0	0	0	0
+        20	         3	      4617	    0	      0	                                    main	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4432	345	0	3	0	0	0	0	0	0	0	0
+        21	         3	      4622	    0	      0	                                    main	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4432	345	0	3	0	0	0	0	0	0	0	0
+        22	         3	      4601	    0	      0	                                    main	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4432	345	0	3	0	0	0	0	0	0	0	0
+        23	         3	      4605	    0	      0	                                    main	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4432	345	0	3	0	0	0	0	0	0	0	0
+        24	         3	      4562	    0	      0	                                    main	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4432	345	0	3	0	0	0	0	0	0	0	0
+        25	         3	      4637	    0	      0	                                    main	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4432	345	0	3	0	0	0	0	0	0	0	0
+        26	         3	      4556	    0	      0	                                    main	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4432	345	0	3	0	0	0	0	0	0	0	0
+        27	         3	      4641	    0	      0	                                    main	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4432	345	0	3	0	0	0	0	0	0	0	0
+        28	         3	      4588	    0	      0	                                    main	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4432	345	0	3	0	0	0	0	0	0	0	0
+        29	         3	      4613	    0	      0	                                    main	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4432	345	0	3	0	0	0	0	0	0	0	0
+        30	         3	      4541	    0	      0	                                    main	/VM/stud/S4741716/Desktop/sucampi/plain_icx_6000000000	4432	345	0	3	0	0	0	0	0	0	0	0
+        31	        -1	         0	    0	      0	                [Unknown stack frame(s)]	n/a	0	0	0	7	0	0	0	0	0	0	0	0

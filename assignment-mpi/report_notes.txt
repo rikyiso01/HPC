@@ -1,0 +1,60 @@
+(without -g)
+icx pi_homework.c -o plain_icx_6000000000
+Number of intervals: 6000000000
+Computed PI 3.141592653589803774139000
+The true PI 3.141592653589793115997963
+
+Elapsed time (s) = 4.66
+
+icx -g pi_homework.c -o plain_icx_6000000000
+
+Number of intervals: 6000000000
+Computed PI 3.141592653589238448574861
+The true PI 3.141592653589793115997963
+
+Elapsed time (s) = 35.32
+
+roofline info:
+
+the loop at line 21 is the hotspot as it takes 35.320 out of 35.320 seconds of execution time 
+(bruh everything else takes less than 1 millisecond)
+
+
+icx -g -O3 pi_homework.c -o optimized_icx_60000000000
+
+Number of intervals: 6000000000
+Computed PI 3.141592653589803774139000
+The true PI 3.141592653589793115997963
+
+Elapsed time (s) = 4.66
+
+opted to increase intervals to 55000000000
+
+icx -g -O3 pi_homework.c -o optimized_icx_550000000000
+
+Number of intervals: 55000000000
+Computed PI 3.141592653589666550573156
+The true PI 3.141592653589793115997963
+
+Elapsed time (s) = 42.74
+
+
+icx -g -O3 -xHost -qopt-report=3 pi_homework.c -o vect_icx_55000000000
+
+report abstract: 
+loop at line 21 vectorized, 
+scalar cost: 23.000000, 
+vector cost: 12.250000, 
+estimated potential speedup: 1.875000
+vectorization support: normalized vectorization overhead 0.562500
+
+execution: 
+
+Number of intervals: 55000000000
+Computed PI 3.141592653589691863658118
+The true PI 3.141592653589793115997963
+
+Elapsed time (s) = 31.99
+
+32 * (1.875 - 0.5625) ~= 42 : the report did not lie
+
