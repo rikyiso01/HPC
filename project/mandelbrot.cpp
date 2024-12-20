@@ -104,7 +104,7 @@ inline int* splitWorkEqually(const int id, const int processes, const int totalW
     return assignments;
 }
 
-// yes I need a prefix sum for _MPI_ don't bother about it
+// needed for the displacements
 inline int* getPrefixSum(const int *array, int arraySize) {
 
     int *prefixSum = new int[arraySize];

@@ -9,7 +9,7 @@
 int main(int argc, char **argv)
 {
     long int i, intervals = INTERVALS;
-    double x, dx, f, sum, pi;
+    double x, dx, f, sum, pi, result;
     double time2;
     
     time_t time1 = clock();
@@ -46,10 +46,10 @@ int main(int argc, char **argv)
         sum = sum + f;
     }
 
-    MPI_Reduce(&sum, &sum, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&result, &sum, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
-        pi = dx*sum;
+        pi = dx*result;
 
         time2 = (clock() - time1) / (double) CLOCKS_PER_SEC;
 
