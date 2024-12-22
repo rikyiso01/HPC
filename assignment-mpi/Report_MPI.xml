@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<indexing>
+ <object alt="" name="Image2" object_type="graphic"/>
+ <object alt="" name="Image1" object_type="graphic"/>
+ <object alt="" name="Image3" object_type="graphic"/>
+ <object alt="" name="Image4" object_type="graphic"/>
+ <object alt="" name="Image5" object_type="graphic"/>
+ <object alt="" name="Image6" object_type="graphic"/>
+ <object alt="" name="Image7" object_type="graphic"/>
+ <paragraph index="30" node_type="writer">Report MPI Assignment</paragraph>
+ <paragraph index="31" node_type="writer">Author:</paragraph>
+ <paragraph index="32" node_type="writer">Gabriele Dellepere 	- S4944557</paragraph>
+ <paragraph index="34" node_type="writer">Head of analysis</paragraph>
+ <paragraph index="36" node_type="writer">Algorithm: the code provided has linear (N) complexity over the number of INTERVALS.</paragraph>
+ <paragraph index="37" node_type="writer">Tools: I used the icx and the mpiicx compilers and Intel Advisor GUI to perform the most of the analysis.</paragraph>
+ <paragraph index="38" node_type="writer">Machine: the machine on which we run the code has 20 processors:</paragraph>
+ <paragraph index="39" node_type="writer">12 core</paragraph>
+ <paragraph index="40" node_type="writer">8 performance cores with hyperthreading up to 2</paragraph>
+ <paragraph index="41" node_type="writer">4 efficiency cores</paragraph>
+ <paragraph index="42" node_type="writer">The program tries to approximate the value of pi using a tailor expansion on the equation of a circumference. The precision of the approximation seems to be determined by the value of the parameter INTERVALS, which determines the number of terms to sum up.</paragraph>
+ <paragraph index="44" node_type="writer">Hotspot identification</paragraph>
+ <paragraph index="46" node_type="writer">First thing I did was compiling the program and launching it, then feed the executable to intel advisor to obtain a detailed analysis.</paragraph>
+ <paragraph index="47" node_type="writer">- compiling line: icx -g -DINTERVALS=6000000000 pi_homework.c -o plain_icx_6000000000</paragraph>
+ <paragraph index="48" node_type="writer">- data size: INTERVALS=6000000000</paragraph>
+ <paragraph index="49" node_type="writer">- computed pi	: 3.141592653589238448574861</paragraph>
+ <paragraph index="50" node_type="writer">- true pi		: 3.141592653589793115997963</paragraph>
+ <paragraph index="51" node_type="writer">- time taken: 35.32 seconds</paragraph>
+ <paragraph index="53" node_type="writer">Advisor identified the loop that can be found at line 22 as the Hotspot, since it took 35.319 seconds out of the 35.320 total (everything else literally took 1 ms).</paragraph>
+ <paragraph index="55" node_type="writer">As we can see from the roofline model, the L1 arithmetic intensity of the program is quite low, hence the throughtput in terms of FLOPs is far from the Scalar add theoretical peak performance (and the computation is mainly held back by memory badwidth). If we look at the code, this result can be explained by manually computing the arithmetic complexity of the loop block. </paragraph>
+ <paragraph index="62" node_type="writer">At each iteration, we have 6 floating point operations, but the amount of bytes accessed (either as read or write) is: 2*8 for x (written and read once per iteration) + 8 for dx (written once per iteration) 2*8 for f (written and read once per iteration), 2*8 for sum (written and read once per iteration) + 8 for intervals (read once per iteration) + AT LEAST 2*8 for i (could be much more depending on how smart/dumb the compiler is) → in the best case scenario, the arithmetic intensity would be about 0.075 FLOPs/byte. We can see from the roofline that it is even lower (0.047 FLOPs/byte), so the program is likely doing some inefficient loads/stores.</paragraph>
+ <paragraph index="64" node_type="writer">I proceeded with enabling compiler optimization and increasing the ITERATION amount in order to get once again an elapsed time greater than 30 seconds:</paragraph>
+ <paragraph index="66" node_type="writer">- compiling line: icx -g -O3 -DINTERVALS=6000000000 pi_homework.c -o optimized_icx_60000000000</paragraph>
+ <paragraph index="67" node_type="writer">- data size: INTERVALS=6000000000</paragraph>
+ <paragraph index="68" node_type="writer">- computed pi	: 3.141592653589803774139000</paragraph>
+ <paragraph index="69" node_type="writer">- true pi		: 3.141592653589793115997963</paragraph>
+ <paragraph index="70" node_type="writer">- time taken: 4.66 seconds</paragraph>
+ <paragraph index="72" node_type="writer">- compiling line: icx -g -O3 -DINTERVALS=55000000000 pi_homework.c -o optimized_icx_55000000000</paragraph>
+ <paragraph index="73" node_type="writer">- data size: INTERVALS=55000000000</paragraph>
+ <paragraph index="74" node_type="writer">- computed pi	: 3.141592653589666550573156</paragraph>
+ <paragraph index="75" node_type="writer">- true pi		: 3.141592653589793115997963</paragraph>
+ <paragraph index="76" node_type="writer">- time taken: 42.74 seconds</paragraph>
+ <paragraph index="79" node_type="writer">Vectorization issues</paragraph>
+ <paragraph index="81" node_type="writer">At this point, it was time to enable the intel compiler to exploit vectorization:</paragraph>
+ <paragraph index="82" node_type="writer">
+- compiling line: icx -g -O3 -xHost -qopt-report=3 -DINTERVALS=55000000000 pi_homework.c -o vect_icx_55000000000</paragraph>
+ <paragraph index="84" node_type="writer">The report showed that there were no issues and the compiler managed to vectorize the loop at line 22, estimating a scalar cost of 23.00, a vector cost of 12.25, a potential speedup of 1.875 and a vectorization overhead of 0.5625. I then proceeded to launch the newly produced executable.</paragraph>
+ <paragraph index="86" node_type="writer">- data size: INTERVALS=55000000000</paragraph>
+ <paragraph index="87" node_type="writer">- computed pi	: 3.141592653589691863658118</paragraph>
+ <paragraph index="88" node_type="writer">- true pi		: 3.141592653589793115997963</paragraph>
+ <paragraph index="89" node_type="writer">- time taken: 31.99 seconds</paragraph>
+ <paragraph index="91" node_type="writer">We may observe that:</paragraph>
+ <paragraph index="93" node_type="writer">32 * (1.875 – 0.5625) ~= 42		→	the report estimation was on point</paragraph>
+ <paragraph index="96" node_type="writer">As we can see, applying compiler optimizations and enabling vectorization increased the L1 arithmetic intensity to 0.75 FLOPs/byte.</paragraph>
+ <paragraph index="99" node_type="writer">Best sequential time</paragraph>
+ <paragraph index="101" node_type="writer">This time defining the best sequential time was fairly easy; I simply picked the execution time of vect_icx_55000000000 </paragraph>
+ <paragraph index="102" node_type="writer">- time taken: 31.99 seconds</paragraph>
+ <paragraph index="104" node_type="writer">MPI Parallelization</paragraph>
+ <paragraph index="106" node_type="writer">To parallelize the computation, I only needed to delegate the partial estimation of “sum” to my processes. Luckily, the sum was just a single double, meaning that by leveraging the MPI_Reduce function I didn’t even need to allocate a source and destination buffer: a second double to hold the result was enough. The only part that required caution was splitting the amount of work as equally as possible, while keeping in mind that it was not guaranteed that ITERATIONS would be divisible by the number of processes.</paragraph>
+ <paragraph index="107" node_type="writer">At the end, the code looked like this:</paragraph>
+ <paragraph index="110" node_type="writer">The program was compiled once and then launched multiple times on a different number of processes to gather the results.</paragraph>
+ <paragraph index="112" node_type="writer">- compiling line: mpiicx -g -O3 -xHost -DINTERVALS=55000000000 mpi_homework.c -o mpiicx_55000000000</paragraph>
+ <paragraph index="113" node_type="writer">- executing line: mpiexec -np &lt;num_processes&gt; mpiicx_55000000000</paragraph>
+ <paragraph index="116" node_type="writer">The reason why there is no host file in the executing line (nor a limit to the amount of processes per host) is because unfortunately I had to launch all the processes on the same machine.</paragraph>
+ <paragraph index="117" node_type="writer">It follows a table of results, in terms of elapsed time, speedup and efficiency, for different values of &lt;num_processes&gt;. For each of this executions, I ensured that the error on the computed pi was never greater than 10^-12</paragraph>
+ <object index="120" name="Table1" object_type="table"/>
+ <paragraph index="122" node_type="writer" parent_index="120">Data size</paragraph>
+ <paragraph index="125" node_type="writer" parent_index="120">INTERVALS = 55000000000</paragraph>
+ <paragraph index="140" node_type="writer" parent_index="120">N processors</paragraph>
+ <paragraph index="143" node_type="writer" parent_index="120">Time spent (s)</paragraph>
+ <paragraph index="146" node_type="writer" parent_index="120">Speedup T1/Tp</paragraph>
+ <paragraph index="149" node_type="writer" parent_index="120">Efficiency</paragraph>
+ <paragraph index="152" node_type="writer" parent_index="120">1</paragraph>
+ <paragraph index="155" node_type="writer" parent_index="120">33.86</paragraph>
+ <paragraph index="158" node_type="writer" parent_index="120">1.00</paragraph>
+ <paragraph index="161" node_type="writer" parent_index="120">1.00</paragraph>
+ <paragraph index="164" node_type="writer" parent_index="120">2</paragraph>
+ <paragraph index="167" node_type="writer" parent_index="120">16.90</paragraph>
+ <paragraph index="170" node_type="writer" parent_index="120">2.00</paragraph>
+ <paragraph index="173" node_type="writer" parent_index="120">1.00</paragraph>
+ <paragraph index="176" node_type="writer" parent_index="120">4</paragraph>
+ <paragraph index="179" node_type="writer" parent_index="120">8.62</paragraph>
+ <paragraph index="182" node_type="writer" parent_index="120">3.93</paragraph>
+ <paragraph index="185" node_type="writer" parent_index="120">0.98</paragraph>
+ <paragraph index="188" node_type="writer" parent_index="120">8</paragraph>
+ <paragraph index="191" node_type="writer" parent_index="120">4.32</paragraph>
+ <paragraph index="194" node_type="writer" parent_index="120">7.84</paragraph>
+ <paragraph index="197" node_type="writer" parent_index="120">0.98</paragraph>
+ <paragraph index="200" node_type="writer" parent_index="120">12</paragraph>
+ <paragraph index="203" node_type="writer" parent_index="120">10.89</paragraph>
+ <paragraph index="206" node_type="writer" parent_index="120">3.11</paragraph>
+ <paragraph index="209" node_type="writer" parent_index="120">0.26</paragraph>
+ <paragraph index="212" node_type="writer" parent_index="120">16</paragraph>
+ <paragraph index="215" node_type="writer" parent_index="120">8.16</paragraph>
+ <paragraph index="218" node_type="writer" parent_index="120">4.15</paragraph>
+ <paragraph index="221" node_type="writer" parent_index="120">0.26</paragraph>
+ <paragraph index="224" node_type="writer" parent_index="120">20</paragraph>
+ <paragraph index="227" node_type="writer" parent_index="120">6.81</paragraph>
+ <paragraph index="230" node_type="writer" parent_index="120">4.97</paragraph>
+ <paragraph index="233" node_type="writer" parent_index="120">0.25</paragraph>
+ <paragraph index="236" node_type="writer" parent_index="120">30</paragraph>
+ <paragraph index="239" node_type="writer" parent_index="120">8.09</paragraph>
+ <paragraph index="242" node_type="writer" parent_index="120">4.19</paragraph>
+ <paragraph index="245" node_type="writer" parent_index="120">0.14</paragraph>
+ <paragraph index="256" node_type="writer">Conclusions</paragraph>
+ <paragraph index="258" node_type="writer">Given the results, there’s no debate that, among the tried configurations, 8 processes is the optimal amount to use. What’s interesting is understanding why is that so. The machine used for testing has 8 performance cores, which do support hyperthreading, but, differently from OpenMP, MPI works with processes, not threads, meaning that any amount of processes greater than 8 will force them to compete for the same hardware resources. There are the 4 efficiency cores available of course, but these ones are usually much slower than performance ones, and since the parallelized task requires the “root” process to wait for messages from all other processes, the final throughtput is determined by the slowest process in the communicator. Hence, any amount of processes greater than 8 on the same machine, for that particular machine, would cause a significant drop in performance.</paragraph>
+</indexing>

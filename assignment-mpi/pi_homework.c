@@ -2,8 +2,9 @@
 #include <time.h>
                
 #define PI25DT 3.141592653589793238462643
-
+#ifndef INTERVALS
 #define INTERVALS 55000000000
+#endif
 
 int main(int argc, char **argv)
 {

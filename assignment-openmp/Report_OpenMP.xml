@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<indexing>
+ <object alt="" name="image6.png" object_type="graphic"/>
+ <object alt="" name="image5.png" object_type="graphic"/>
+ <object alt="" name="image1.png" object_type="graphic"/>
+ <object alt="" name="image4.png" object_type="graphic"/>
+ <object alt="" name="image2.png" object_type="graphic"/>
+ <object alt="" name="image3.png" object_type="graphic"/>
+ <paragraph index="27" node_type="writer">Report OpenMP</paragraph>
+ <paragraph index="28" node_type="writer">Authors:</paragraph>
+ <paragraph index="29" node_type="writer">Riccardo Isola 	- S4943369</paragraph>
+ <paragraph index="30" node_type="writer">Gabriele Dellepere 	- S4944557</paragraph>
+ <paragraph index="31" node_type="writer">Kevin Cattaneo 	- S4944382 </paragraph>
+ <paragraph index="32" node_type="writer">Index</paragraph>
+ <object index="34" name="Table of Contents1" object_type="section"/>
+ <paragraph index="35" node_type="writer" parent_index="34">Index	1</paragraph>
+ <paragraph index="36" node_type="writer" parent_index="34">Head of analysis	1</paragraph>
+ <paragraph index="37" node_type="writer" parent_index="34">Hotspot identification	1</paragraph>
+ <paragraph index="38" node_type="writer" parent_index="34">First optimization (manual)	3</paragraph>
+ <paragraph index="39" node_type="writer" parent_index="34">Vectorization issues	3</paragraph>
+ <paragraph index="40" node_type="writer" parent_index="34">Best sequential time	4</paragraph>
+ <paragraph index="41" node_type="writer" parent_index="34">OpenMP Parallelization	5</paragraph>
+ <paragraph index="42" node_type="writer" parent_index="34">Speedup and efficiency	7</paragraph>
+ <paragraph index="43" node_type="writer" parent_index="34">Conclusions	9</paragraph>
+ <paragraph index="46" node_type="writer">Head of analysis</paragraph>
+ <paragraph index="47" node_type="writer">Algorithm: the code provided has quadratic N^2 complexity.</paragraph>
+ <paragraph index="48" node_type="writer">Tools: we used the icx compiler, the Intel one, and Intel Advisor GUI to perform the most of the analysis.</paragraph>
+ <paragraph index="49" node_type="writer">Machine: the machine on which we run the code has 20 processors:</paragraph>
+ <paragraph index="50" node_type="writer">12 core</paragraph>
+ <paragraph index="51" node_type="writer">8 performance cores with hyperthreading up to 2</paragraph>
+ <paragraph index="52" node_type="writer">4 efficiency cores</paragraph>
+ <paragraph index="53" node_type="writer">Hotspot identification</paragraph>
+ <paragraph index="54" node_type="writer">In first place we compiled the program:</paragraph>
+ <paragraph index="55" node_type="writer">- compiling line: icx -g -fopenmp omp_homework.c</paragraph>
+ <paragraph index="56" node_type="writer">- data size: 30000</paragraph>
+ <paragraph index="57" node_type="writer">- time taken: 67.684 seconds</paragraph>
+ <paragraph index="59" node_type="writer">Then we put the executable into intel advisor to perform a detailed analysis, where we identified the following hotspots.</paragraph>
+ <object index="62" name="Table1" object_type="table"/>
+ <paragraph index="64" node_type="writer" parent_index="62">Name</paragraph>
+ <paragraph index="67" node_type="writer" parent_index="62">Time taken (seconds)</paragraph>
+ <paragraph index="70" node_type="writer" parent_index="62">Overall program</paragraph>
+ <paragraph index="73" node_type="writer" parent_index="62">67.684242</paragraph>
+ <paragraph index="76" node_type="writer" parent_index="62">DFT loops (lines 71-73)</paragraph>
+ <paragraph index="79" node_type="writer" parent_index="62">24.496</paragraph>
+ <paragraph index="82" node_type="writer" parent_index="62">sin function</paragraph>
+ <paragraph index="85" node_type="writer" parent_index="62">31.982</paragraph>
+ <paragraph index="88" node_type="writer" parent_index="62">cos function</paragraph>
+ <paragraph index="91" node_type="writer" parent_index="62">9.452</paragraph>
+ <paragraph index="95" node_type="writer">It was clear (being the sin and cos function called only inside the DFT inner loop) that the region of code that took the most amount of time during the computation were the lines 71-80, containing the two loops needed to compute the DFT. </paragraph>
+ <paragraph index="97" node_type="writer">To delve into more details of the hotspots, we computed the roofline model, and we lowered the datasize (for a matter of analysis time available):</paragraph>
+ <paragraph index="98" node_type="writer">- compiling line: icx -g -fopenmp omp_homework.c</paragraph>
+ <paragraph index="99" node_type="writer">- data size: 5000</paragraph>
+ <paragraph index="100" node_type="writer">- time taken: 1.869 seconds</paragraph>
+ <paragraph index="105" node_type="writer">As seen before we have three hotspots represented by the red (took more time) and yellow points. In particular on the left we have the DFT loop hotspot. We observed that our performances are near the corresponding rooflines: our arithmetic intensity is low, so the limit is represented by the memory. 
+We could reach better performances if we run a different implementation of our algorithm that exploits the caches better.</paragraph>
+ <paragraph index="106" node_type="writer">First optimization (manual)</paragraph>
+ <paragraph index="107" node_type="writer">We provided a first optimization by swapping the for loops in line 71 with 73. The main objective was, by having n fixed in the inner loop, to reuse cache lines when using xr[n] xi[n] in the computation, where k was used continuously to perform write operations.</paragraph>
+ <paragraph index="109" node_type="writer">- compiling line: icx -g -fopenmp omp_homework.c</paragraph>
+ <paragraph index="110" node_type="writer">- data size: 30000</paragraph>
+ <paragraph index="111" node_type="writer">- time taken: 30.452 seconds</paragraph>
+ <object index="113" name="Table2" object_type="table"/>
+ <paragraph index="115" node_type="writer" parent_index="113">Name</paragraph>
+ <paragraph index="118" node_type="writer" parent_index="113">Time taken (seconds)</paragraph>
+ <paragraph index="121" node_type="writer" parent_index="113">Overall program</paragraph>
+ <paragraph index="124" node_type="writer" parent_index="113">30.451946</paragraph>
+ <paragraph index="127" node_type="writer" parent_index="113">DFT loops (lines 71-73)</paragraph>
+ <paragraph index="130" node_type="writer" parent_index="113">6.932</paragraph>
+ <paragraph index="133" node_type="writer" parent_index="113">sin function</paragraph>
+ <paragraph index="136" node_type="writer" parent_index="113">17.780</paragraph>
+ <paragraph index="139" node_type="writer" parent_index="113">cos function</paragraph>
+ <paragraph index="142" node_type="writer" parent_index="113">4,936</paragraph>
+ <paragraph index="146" node_type="writer">The manual swap reduced the overall program time by half.</paragraph>
+ <paragraph index="147" node_type="writer">Vectorization issues</paragraph>
+ <paragraph index="148" node_type="writer">To obtain the report about vectorization infos, we specified the level 3:</paragraph>
+ <paragraph index="150" node_type="writer">First</paragraph>
+ <paragraph index="151" node_type="writer">- compiling line: icx -fopenmp -O3 -xHost -qopt-report=3 omp_homework.c</paragraph>
+ <paragraph index="152" node_type="writer">- data size: 30000</paragraph>
+ <paragraph index="153" node_type="writer">- time taken: 3.410 seconds</paragraph>
+ <paragraph index="154" node_type="writer">- note: no manual swap of loops</paragraph>
+ <paragraph index="156" node_type="writer">Second</paragraph>
+ <paragraph index="157" node_type="writer">- compiling line: icx -fopenmp -O3 -xHost -qopt-report=3 omp_homework.c</paragraph>
+ <paragraph index="158" node_type="writer">- data size: 30000</paragraph>
+ <paragraph index="159" node_type="writer">- time taken: 3.440 seconds</paragraph>
+ <paragraph index="160" node_type="writer">- note: applied manual swap of loops</paragraph>
+ <paragraph index="162" node_type="writer">We observed that:</paragraph>
+ <paragraph index="163" node_type="writer">no vectorization issues reported</paragraph>
+ <paragraph index="164" node_type="writer">all the inner loops, apart the one where we print the result, are successfully vectorized (this includes the signal generation loop, however this has minimal impact on the performance)</paragraph>
+ <paragraph index="165" node_type="writer">the only difference is that in the non-swapped case the report shows a message telling that a vectorization reduction has been performed, still in the second case with the manual loop swapping we obtained the same time results </paragraph>
+ <paragraph index="166" node_type="writer">Best sequential time</paragraph>
+ <paragraph index="167" node_type="writer">Now we perform different runs to find the best sequential time, to be used as reference for the further parallel application, by passing several arguments and flags to the intel compiler.</paragraph>
+ <paragraph index="169" node_type="writer">- compiling line: icx -fopenmp -O3 -xHost -ipo -ffast-math omp_homework.c</paragraph>
+ <paragraph index="170" node_type="writer">- data size: 30000</paragraph>
+ <paragraph index="171" node_type="writer">- time taken: 3.501 seconds</paragraph>
+ <paragraph index="172" node_type="writer">- note: no manual swap of loops</paragraph>
+ <object index="174" name="Table3" object_type="table"/>
+ <paragraph index="176" node_type="writer" parent_index="174">Name</paragraph>
+ <paragraph index="179" node_type="writer" parent_index="174">Time taken (seconds)</paragraph>
+ <paragraph index="182" node_type="writer" parent_index="174">Overall program</paragraph>
+ <paragraph index="185" node_type="writer" parent_index="174">3.500807</paragraph>
+ <paragraph index="188" node_type="writer" parent_index="174">DFT loops (lines 71-73)</paragraph>
+ <paragraph index="191" node_type="writer" parent_index="174">0.470</paragraph>
+ <paragraph index="194" node_type="writer" parent_index="174">sin function</paragraph>
+ <paragraph index="197" node_type="writer" parent_index="174">0.556</paragraph>
+ <paragraph index="200" node_type="writer" parent_index="174">cos function</paragraph>
+ <paragraph index="203" node_type="writer" parent_index="174">2.044</paragraph>
+ <paragraph index="207" node_type="writer">Overall we are applying the best optimizations arguments:</paragraph>
+ <paragraph index="208" node_type="writer">O3: to allow the compiler to optimize the code, so that it can reorder the operations in the most efficient way, perform hoisting and use sincos instead of computing the sin and cosine in separate operations </paragraph>
+ <paragraph index="209" node_type="writer">xHost: to achieve the best assembly instructions specifically on the current machine architecture</paragraph>
+ <paragraph index="210" node_type="writer">ipo: to enable interprocedural optimizations; we observed that with this flag the program didn’t achieve better performances: the program slows by a fraction of time (also by increasing data size)</paragraph>
+ <paragraph index="211" node_type="writer">fast-math: to reduce the time needed for mathematical operations, altough reducing the precision of our calculations.</paragraph>
+ <paragraph index="213" node_type="writer">Then another run:</paragraph>
+ <paragraph index="214" node_type="writer">- compiling line: icx -fopenmp -fopenmp-O3 -xHost -ipo -ffast-math omp_homework.c</paragraph>
+ <paragraph index="215" node_type="writer">- data size: 30000</paragraph>
+ <paragraph index="216" node_type="writer">- time taken: 3.501 seconds</paragraph>
+ <paragraph index="217" node_type="writer">- note: applied manual swap of loops</paragraph>
+ <paragraph index="219" node_type="writer">In this case Intel advisor software suggested to use specifically the correct FMA instruction, so we specified the flag -axCORE-AVX2 as suggested, instead of xHost. 
+But the result in time was the same, so xHost already does the work well.</paragraph>
+ <paragraph index="220" node_type="writer">At the end we decided to discard the usage of the manual swap.</paragraph>
+ <paragraph index="222" node_type="writer">Then we performed several runs to reach at least 30 seconds of execution, and to do so we increased the data size:</paragraph>
+ <paragraph index="223" node_type="writer"> </paragraph>
+ <paragraph index="224" node_type="writer">- compiling line: icx -O3 -xHost -ipo -ffast-math omp_homework.c</paragraph>
+ <paragraph index="225" node_type="writer">- data size: 90000</paragraph>
+ <paragraph index="226" node_type="writer">- time taken: 30.454 seconds</paragraph>
+ <paragraph index="227" node_type="writer">- note: no manual swap of loops</paragraph>
+ <paragraph index="229" node_type="writer">OpenMP Parallelization</paragraph>
+ <paragraph index="231" node_type="writer">The following analysis is again performed with  N = 90000 and the optimal number of threads decided by the scheduler.</paragraph>
+ <paragraph index="233" node_type="writer">On line 71 we put the following line:</paragraph>
+ <paragraph index="234" node_type="writer"># pragma omp parallel for collapse(2) default(none) private(k,n) shared(Xr_o,xr,xi,Xi_o,N,idft)</paragraph>
+ <paragraph index="236" node_type="writer">The usage of collapse(2) would collapse both the DFT loops into a single longer one, allowing us to theoretically parallelize every iteration.</paragraph>
+ <paragraph index="238" node_type="writer">- compiling line: icx -fopenmp -O3 -xHost -ipo -ffast-math omp_homework.c</paragraph>
+ <paragraph index="239" node_type="writer">- data size: 90000</paragraph>
+ <paragraph index="240" node_type="writer">- number of threads: 20 (decided by scheduler)</paragraph>
+ <paragraph index="241" node_type="writer">- time taken: 26.731 seconds</paragraph>
+ <paragraph index="242" node_type="writer">- note: no manual swap of loops</paragraph>
+ <paragraph index="244" node_type="writer">We assumed the poor results were caused by the excessive dimensions of the collapsed loop, which caused too much overhead for the “small” number of threads we could assign jobs to.</paragraph>
+ <paragraph index="246" node_type="writer">We then tried parallelizing only the outer loop:</paragraph>
+ <paragraph index="248" node_type="writer"># pragma omp parallel for default(none) private(k,n) shared(Xr_o,xr,xi,Xi_o,N,idft)</paragraph>
+ <paragraph index="250" node_type="writer">- compiling line: icx -fopenmp -O3 -xHost -ipo -ffast-math omp_homework.c</paragraph>
+ <paragraph index="251" node_type="writer">- data size: 90000</paragraph>
+ <paragraph index="252" node_type="writer">- number of threads: 20 (decided by scheduler)</paragraph>
+ <paragraph index="253" node_type="writer">- time taken: 4.615 seconds</paragraph>
+ <paragraph index="254" node_type="writer">- note: no manual swap of loops</paragraph>
+ <paragraph index="256" node_type="writer">As a result the program took 4.615 seconds. So just the parallelization of the first and most external loop seems to be sufficient and doesn’t provide the overhead of the previous defined pragma.</paragraph>
+ <paragraph index="258" node_type="writer">We proceeded to do the same for just the inner loop as well, with some precautions to avoid breaking the parallelization:</paragraph>
+ <paragraph index="260" node_type="writer">On line 71 we removed the “for” from the pragma:</paragraph>
+ <paragraph index="261" node_type="writer"># pragma omp parallel default(none) private(k,n) shared(Xr_o,xr,xi,Xi_o,N,idft)</paragraph>
+ <paragraph index="262" node_type="writer">And on line 73 (inner loop in line 74) we added:</paragraph>
+ <paragraph index="263" node_type="writer"># pragma omp for nowait</paragraph>
+ <paragraph index="264" node_type="writer">The nowait was needed to avoid having a barrier being waited at after each iteration of the loop.</paragraph>
+ <paragraph index="266" node_type="writer">- compiling line: icx -fopenmp -O3 -xHost -ipo -ffast-math omp_homework.c</paragraph>
+ <paragraph index="267" node_type="writer">- data size: 90000</paragraph>
+ <paragraph index="268" node_type="writer">- number of threads: 20 (decided by scheduler)</paragraph>
+ <paragraph index="269" node_type="writer">- time taken: 4.849 seconds</paragraph>
+ <paragraph index="270" node_type="writer">- note: no manual swap of loops</paragraph>
+ <paragraph index="272" node_type="writer">As a result the program took 4.849 seconds. </paragraph>
+ <paragraph index="276" node_type="writer">Also we can see from Intel Advisor that our performances have increased as expected. In that case we are very near to the roofline line of L1 cache exploitations with the current set of instructions and optimizations.</paragraph>
+ <paragraph index="277" node_type="writer">We just found the best combination of flags for parallelization using the optimal number of threads decided by the scheduler.</paragraph>
+ <paragraph index="278" node_type="writer">Now we increase the data size to test the limits by trying different combinations of the usage of the pragma instructions.</paragraph>
+ <paragraph index="280" node_type="writer">First</paragraph>
+ <paragraph index="281" node_type="writer">- compiling line: icx -fopenmp -O3 -xHost -ipo -ffast-math omp_homework.c</paragraph>
+ <paragraph index="282" node_type="writer">- data size:  230000</paragraph>
+ <paragraph index="283" node_type="writer">- number of threads: 20 (decided by scheduler)</paragraph>
+ <paragraph index="284" node_type="writer">- time taken: 34.311 seconds</paragraph>
+ <paragraph index="285" node_type="writer">- note: both pragma instruction applied (just the internal loop is parallelized)</paragraph>
+ <paragraph index="287" node_type="writer">Second</paragraph>
+ <paragraph index="288" node_type="writer">- compiling line: icx -fopenmp -O3 -xHost -ipo -ffast-math omp_homework.c</paragraph>
+ <paragraph index="289" node_type="writer">- data size:  230000</paragraph>
+ <paragraph index="290" node_type="writer">- number of threads: 20 (decided by scheduler)</paragraph>
+ <paragraph index="291" node_type="writer">- time taken: 29.045 seconds</paragraph>
+ <paragraph index="292" node_type="writer">- note: just one pragma on the external for loop (just the external one is parallelized)</paragraph>
+ <paragraph index="294" node_type="writer">Speedup and efficiency</paragraph>
+ <paragraph index="295" node_type="writer">As possible number of processors, we chose:</paragraph>
+ <paragraph index="296" node_type="writer">1: sequential run</paragraph>
+ <paragraph index="297" node_type="writer">2: enable parallelization</paragraph>
+ <paragraph index="298" node_type="writer">4: equal to the number of performance cores</paragraph>
+ <paragraph index="299" node_type="writer">12: equal to the number of all cores without considering hyperthreading</paragraph>
+ <paragraph index="300" node_type="writer">20: the maximum value of processors considering hyperthreading up to 2</paragraph>
+ <paragraph index="301" node_type="writer">30: to observe any overhead</paragraph>
+ <object index="304" name="Table4" object_type="table"/>
+ <paragraph index="306" node_type="writer" parent_index="304">Data size</paragraph>
+ <paragraph index="309" node_type="writer" parent_index="304">90000</paragraph>
+ <paragraph index="330" node_type="writer" parent_index="304">N processors</paragraph>
+ <paragraph index="333" node_type="writer" parent_index="304">Time spent</paragraph>
+ <paragraph index="336" node_type="writer" parent_index="304">Speedup</paragraph>
+ <paragraph index="339" node_type="writer" parent_index="304">Efficiency</paragraph>
+ <paragraph index="342" node_type="writer" parent_index="304">1</paragraph>
+ <paragraph index="345" node_type="writer" parent_index="304">33,17</paragraph>
+ <paragraph index="348" node_type="writer" parent_index="304">1</paragraph>
+ <paragraph index="351" node_type="writer" parent_index="304">1,00</paragraph>
+ <paragraph index="354" node_type="writer" parent_index="304">2</paragraph>
+ <paragraph index="357" node_type="writer" parent_index="304">16,60</paragraph>
+ <paragraph index="360" node_type="writer" parent_index="304">2</paragraph>
+ <paragraph index="363" node_type="writer" parent_index="304">1,00</paragraph>
+ <paragraph index="366" node_type="writer" parent_index="304">4</paragraph>
+ <paragraph index="369" node_type="writer" parent_index="304">8,30</paragraph>
+ <paragraph index="372" node_type="writer" parent_index="304">4</paragraph>
+ <paragraph index="375" node_type="writer" parent_index="304">1,00</paragraph>
+ <paragraph index="378" node_type="writer" parent_index="304">12</paragraph>
+ <paragraph index="381" node_type="writer" parent_index="304">6,03</paragraph>
+ <paragraph index="384" node_type="writer" parent_index="304">6</paragraph>
+ <paragraph index="387" node_type="writer" parent_index="304">0,46</paragraph>
+ <paragraph index="390" node_type="writer" parent_index="304">20</paragraph>
+ <paragraph index="393" node_type="writer" parent_index="304">4,18</paragraph>
+ <paragraph index="396" node_type="writer" parent_index="304">8</paragraph>
+ <paragraph index="399" node_type="writer" parent_index="304">0,40</paragraph>
+ <paragraph index="402" node_type="writer" parent_index="304">30</paragraph>
+ <paragraph index="405" node_type="writer" parent_index="304">3,09</paragraph>
+ <paragraph index="408" node_type="writer" parent_index="304">11</paragraph>
+ <paragraph index="411" node_type="writer" parent_index="304">0,36</paragraph>
+ <paragraph index="416" node_type="writer">We observe that after enabling the parallelization with 2 processors, the time spent drastically decreases, while remaining more or less stable after 12 processors.</paragraph>
+ <paragraph index="419" node_type="writer">Here we see more or less a linear speedup increment; then after 12 obtaining a bigger speedup when exploiting the maximum number of processors.</paragraph>
+ <paragraph index="426" node_type="writer">On the other hand, the efficiency remains more or less stable up to 4 processors, then starts decreasing, observing that the percentage of decrement is bigger between the measures of 4 and 12 processors rather than the 12 and 20 measures. As expected continues to decrease also after that number.</paragraph>
+ <paragraph index="427" node_type="writer">Conclusions</paragraph>
+ <paragraph index="428" node_type="writer">We observed that, in the best sequential case, our code performs the run in about 30 seconds, on an amount of data that has to be triplicated from the original unoptimized sequential run (that performed in about 60 seconds for N=30000). So the compilation optimization flags increased by a lot the performance of our code given also by the quadratic complexity, so the result obtained with the new amount of data indeed shows a huge improvement.</paragraph>
+ <paragraph index="429" node_type="writer">By applying the pragma instructions to achieve better performance exploiting our processors via the OpenMP library, we observed an improvement that follows the increase of the number of threads. By just using 2 processors, we halved the time run, and by using 4 we halved again.</paragraph>
+ <paragraph index="430" node_type="writer">The optimal number of threads to be used, without losing too much in terms of efficiency is around 10: so 12 in our choices. We can get better performance by increasing that number to the maximum number of processors, that is 20, but the gain is of just a few seconds, not so relevant, also because the efficiency dramatically decreases.</paragraph>
+ <paragraph index="431" node_type="writer">Finally, by applying a number of processors greater than the one owned in the machine, we don’t observe any major overhead that significantly delays the time run of our code.</paragraph>
+</indexing>

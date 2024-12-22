@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<indexing>
+ <object alt="" name="image2.png" object_type="graphic"/>
+ <object alt="" name="image1.png" object_type="graphic"/>
+ <object alt="" name="image3.png" object_type="graphic"/>
+ <object alt="" name="image4.png" object_type="graphic"/>
+ <paragraph index="21" node_type="writer">Report CUDA</paragraph>
+ <paragraph index="22" node_type="writer">Authors:</paragraph>
+ <paragraph index="23" node_type="writer">Riccardo Isola 	- S4943369</paragraph>
+ <paragraph index="24" node_type="writer">Gabriele Dellepere 	- S4944557</paragraph>
+ <paragraph index="25" node_type="writer">Kevin Cattaneo 	- S4944382 </paragraph>
+ <paragraph index="26" node_type="writer">Index</paragraph>
+ <object index="28" name="Table of Contents1" object_type="section"/>
+ <paragraph index="29" node_type="writer" parent_index="28">Index	1</paragraph>
+ <paragraph index="30" node_type="writer" parent_index="28">Head of analysis	1</paragraph>
+ <paragraph index="31" node_type="writer" parent_index="28">Hotspot identification	2</paragraph>
+ <paragraph index="32" node_type="writer" parent_index="28">Vectorization issues	2</paragraph>
+ <paragraph index="33" node_type="writer" parent_index="28">Best sequential time	3</paragraph>
+ <paragraph index="34" node_type="writer" parent_index="28">CUDA Parallelization	3</paragraph>
+ <paragraph index="35" node_type="writer" parent_index="28">First version	4</paragraph>
+ <paragraph index="36" node_type="writer" parent_index="28">Second version - Shared memory	6</paragraph>
+ <paragraph index="37" node_type="writer" parent_index="28">Third version - cudaMallocPitch	7</paragraph>
+ <paragraph index="38" node_type="writer" parent_index="28">Speedup	8</paragraph>
+ <paragraph index="39" node_type="writer" parent_index="28">Conclusions	11</paragraph>
+ <paragraph index="42" node_type="writer">Head of analysis</paragraph>
+ <paragraph index="43" node_type="writer">Algorithm: the code provided has a complexity of rows * columns * iterations.</paragraph>
+ <paragraph index="44" node_type="writer">Tools:</paragraph>
+ <paragraph index="45" node_type="writer">on Colab</paragraph>
+ <paragraph index="46" node_type="writer">gcc compiler</paragraph>
+ <paragraph index="47" node_type="writer">nvcc compiler for parallel versions</paragraph>
+ <paragraph index="48" node_type="writer">Intel Advisor GUI to perform the roofline analysis</paragraph>
+ <paragraph index="49" node_type="writer">icx to obtain the vectorization report</paragraph>
+ <paragraph index="50" node_type="writer">Machines: we run code on </paragraph>
+ <paragraph index="51" node_type="writer">the lab machine:</paragraph>
+ <paragraph index="52" node_type="writer">20 processors</paragraph>
+ <paragraph index="53" node_type="writer">12 core</paragraph>
+ <paragraph index="54" node_type="writer">8 performance cores with hyperthreading up to 2</paragraph>
+ <paragraph index="55" node_type="writer">4 efficiency cores</paragraph>
+ <paragraph index="56" node_type="writer">the Colab machine for the accelerator:</paragraph>
+ <paragraph index="57" node_type="writer">one NVIDIA Tesla T4 GPU with 16 GB VRAM</paragraph>
+ <paragraph index="58" node_type="writer">Hotspot identification</paragraph>
+ <paragraph index="59" node_type="writer">In first place we compiled the program:</paragraph>
+ <paragraph index="60" node_type="writer">- compiling line: icx -g heat.c</paragraph>
+ <paragraph index="61" node_type="writer">- data size: 1000x1000 matrix size, 2000 steps</paragraph>
+ <paragraph index="62" node_type="writer">- time taken: 9.72 seconds</paragraph>
+ <paragraph index="64" node_type="writer">Then we put the executable into intel advisor to perform a detailed analysis, where we identified the following hotspots.</paragraph>
+ <object index="66" name="Table1" object_type="table"/>
+ <paragraph index="68" node_type="writer" parent_index="66">Name</paragraph>
+ <paragraph index="71" node_type="writer" parent_index="66">Time taken (seconds)</paragraph>
+ <paragraph index="74" node_type="writer" parent_index="66">Overall program</paragraph>
+ <paragraph index="77" node_type="writer" parent_index="66">9.72</paragraph>
+ <paragraph index="80" node_type="writer" parent_index="66">loop in step_kernel_ref</paragraph>
+ <paragraph index="83" node_type="writer" parent_index="66">9.70</paragraph>
+ <paragraph index="91" node_type="writer">As a hotspot we have the loop that involves the computation inside the step_kernel_ref, that is the one that is not optimized.</paragraph>
+ <paragraph index="92" node_type="writer">Vectorization issues</paragraph>
+ <paragraph index="93" node_type="writer">To obtain the report about vectorization infos, we specified the level 3:</paragraph>
+ <paragraph index="95" node_type="writer">- compiling line: icx -O3 -xHost -qopt-report=3 heat.c</paragraph>
+ <paragraph index="96" node_type="writer">- data size: 1000x1000 matrix size, 2000 steps</paragraph>
+ <paragraph index="97" node_type="writer">- time taken: 0.457764 seconds</paragraph>
+ <paragraph index="99" node_type="writer">We observed that:</paragraph>
+ <paragraph index="100" node_type="writer">no major vectorization issues reported</paragraph>
+ <paragraph index="101" node_type="writer">all the inner loops, apart the one where we print the result, are successfully vectorized</paragraph>
+ <paragraph index="102" node_type="writer">no vectorization of outer loops (those should be the one that are parallelized) and of the line 102 because of step dependence and function call</paragraph>
+ <paragraph index="103" node_type="writer">Best sequential time</paragraph>
+ <paragraph index="104" node_type="writer">Now we perform different runs to find the best sequential time, to be used as reference for the further parallel application, by passing several arguments and flags to the intel compiler.</paragraph>
+ <paragraph index="106" node_type="writer">- compiling line: icx -O3 -xHost -ffast-math heat.c</paragraph>
+ <paragraph index="107" node_type="writer">- data size: 1000x1000 matrix size, 2000 steps</paragraph>
+ <paragraph index="108" node_type="writer">- time taken: 0.453736 seconds</paragraph>
+ <paragraph index="110" node_type="writer">Overall we are applying the best optimizations arguments:</paragraph>
+ <paragraph index="111" node_type="writer">O3: to allow the compiler to optimize the code, so that it can reorder the operations in the most efficient way</paragraph>
+ <paragraph index="112" node_type="writer">xHost: to achieve the best assembly instructions specifically on the current machine architecture</paragraph>
+ <paragraph index="113" node_type="writer">fast-math: to reduce the time needed for mathematical operations, altough reducing the precision of our calculations.</paragraph>
+ <paragraph index="115" node_type="writer">Then we performed several runs to reach at least 30 seconds of execution, and to do so we increased the data size:</paragraph>
+ <paragraph index="116" node_type="writer"> </paragraph>
+ <paragraph index="117" node_type="writer">- compiling line: icx -O3 -ffast-math heat.c</paragraph>
+ <paragraph index="118" node_type="writer">- data size: 13000x13000 matrix size, 400 steps</paragraph>
+ <paragraph index="119" node_type="writer">- time taken: 29.592816 seconds</paragraph>
+ <paragraph index="121" node_type="writer">CUDA Parallelization</paragraph>
+ <paragraph index="122" node_type="writer">As first thing we explored some specifications of the machine on which we are running on via devicequery:</paragraph>
+ <paragraph index="124" node_type="writer">Device 0: &quot;Tesla T4&quot;</paragraph>
+ <paragraph index="125" node_type="writer">  CUDA Driver Version / Runtime Version          12.2 / 12.2</paragraph>
+ <paragraph index="126" node_type="writer">  CUDA Capability Major/Minor version number:    7.5</paragraph>
+ <paragraph index="127" node_type="writer">  Total amount of global memory:                 15102 MBytes (15835660288 bytes)</paragraph>
+ <paragraph index="128" node_type="writer">  (040) Multiprocessors, (064) CUDA Cores/MP:    2560 CUDA Cores</paragraph>
+ <paragraph index="129" node_type="writer">  GPU Max Clock rate:                            1590 MHz (1.59 GHz)</paragraph>
+ <paragraph index="130" node_type="writer">  Memory Clock rate:                             5001 Mhz</paragraph>
+ <paragraph index="131" node_type="writer">  Memory Bus Width:                              256-bit</paragraph>
+ <paragraph index="132" node_type="writer">  L2 Cache Size:                                 4194304 bytes</paragraph>
+ <paragraph index="133" node_type="writer">  Maximum Texture Dimension Size (x,y,z)         1D=(131072), 2D=(131072, 65536), 3D=(16384, 16384, 16384)</paragraph>
+ <paragraph index="134" node_type="writer">  Maximum Layered 1D Texture Size, (num) layers  1D=(32768), 2048 layers</paragraph>
+ <paragraph index="135" node_type="writer">  Maximum Layered 2D Texture Size, (num) layers  2D=(32768, 32768), 2048 layers</paragraph>
+ <paragraph index="136" node_type="writer">  Total amount of constant memory:               65536 bytes</paragraph>
+ <paragraph index="137" node_type="writer">  Total amount of shared memory per block:       49152 bytes</paragraph>
+ <paragraph index="138" node_type="writer">  Total shared memory per multiprocessor:        65536 bytes</paragraph>
+ <paragraph index="139" node_type="writer">  Total number of registers available per block: 65536</paragraph>
+ <paragraph index="140" node_type="writer">  Warp size:                                     32</paragraph>
+ <paragraph index="141" node_type="writer">  Maximum number of threads per multiprocessor:  1024</paragraph>
+ <paragraph index="142" node_type="writer">  Maximum number of threads per block:           1024</paragraph>
+ <paragraph index="143" node_type="writer">  Max dimension size of a thread block (x,y,z): (1024, 1024, 64)</paragraph>
+ <paragraph index="144" node_type="writer">  Max dimension size of a grid size    (x,y,z): (2147483647, 65535, 65535)</paragraph>
+ <paragraph index="145" node_type="writer">[...]</paragraph>
+ <paragraph index="147" node_type="writer">So the maximum number of threads that we can use per block is 1024, scheduled in warps of 32 threads. Also we have available 40 Streaming Multiprocessors (each with 2 warp schedulers), for a total available maximum of 2560 concurrent threads scheduled at each clock cycle.</paragraph>
+ <paragraph index="148" node_type="writer">First version</paragraph>
+ <paragraph index="149" node_type="writer">The main idea was to unroll the for loop inside the function step_kernel_mod that exploits the blocks scanning the heat matrix via indexes:</paragraph>
+ <paragraph index="150" node_type="writer">int x = threadIdx.x + blockIdx.x * blockDim.x + 1;</paragraph>
+ <paragraph index="151" node_type="writer">int y = threadIdx.y + blockIdx.y * blockDim.y + 1;</paragraph>
+ <paragraph index="153" node_type="writer">(the +1 was put there as our algorithm does not update the edges of the matrix)</paragraph>
+ <paragraph index="154" node_type="writer">Also we exit whenever we reach indexes that doesn’t map to any cell since CUDA allocate gridSize * blockSize threads which does not necessarily are equal to matrix size </paragraph>
+ <paragraph index="155" node_type="writer">if(x &gt;= ni-1 || y &gt;= nj-1) return;</paragraph>
+ <paragraph index="157" node_type="writer">And in the derivative evaluation we put directly as index the I2D transformation done splitted in the step_kernel_ref.</paragraph>
+ <paragraph index="159" node_type="writer">Then in the main:</paragraph>
+ <paragraph index="160" node_type="writer">float *temp1_dev, *temp2_dev;</paragraph>
+ <paragraph index="162" node_type="writer"> cudaMalloc((void**) &amp;temp1_dev, size);</paragraph>
+ <paragraph index="163" node_type="writer"> cudaMalloc((void**) &amp;temp2_dev, size);</paragraph>
+ <paragraph index="165" node_type="writer"> printf(&quot;%.5f %.5f %.5f \\n&quot; , temp1[0], temp1[4500], temp1[6700]);</paragraph>
+ <paragraph index="166" node_type="writer"> cudaMemcpy(temp1_dev, temp1, size, cudaMemcpyHostToDevice);</paragraph>
+ <paragraph index="167" node_type="writer"> cudaMemcpy(temp2_dev, temp2, size, cudaMemcpyHostToDevice);</paragraph>
+ <paragraph index="169" node_type="writer"> dim3 block_size(BLOCK_WIDTH, BLOCK_HEIGHT);</paragraph>
+ <paragraph index="170" node_type="writer"> dim3 grid_size = dim3((nj - 3) / BLOCK_WIDTH + 1, (ni - 3) / BLOCK_HEIGHT + 1);</paragraph>
+ <paragraph index="172" node_type="writer"> printf(&quot;\\n%d %d \\n&quot;, (nj - 3) / BLOCK_WIDTH + 1, (ni - 3) / BLOCK_HEIGHT + 1);</paragraph>
+ <paragraph index="174" node_type="writer"> // Execute the modified version using same data</paragraph>
+ <paragraph index="175" node_type="writer"> for (istep=0; istep &lt; nstep; istep++) {</paragraph>
+ <paragraph index="176" node_type="writer">   step_kernel_mod&lt;&lt;&lt;grid_size, block_size&gt;&gt;&gt;(ni, nj, tfac, temp1_dev, temp2_dev);</paragraph>
+ <paragraph index="178" node_type="writer">   // swap the temperature pointers</paragraph>
+ <paragraph index="179" node_type="writer">   temp_tmp = temp1_dev;</paragraph>
+ <paragraph index="180" node_type="writer">   temp1_dev = temp2_dev;</paragraph>
+ <paragraph index="181" node_type="writer">   temp2_dev = temp_tmp;</paragraph>
+ <paragraph index="182" node_type="writer"> }</paragraph>
+ <paragraph index="183" node_type="writer"> cudaMemcpy(temp1, temp1_dev, size, cudaMemcpyDeviceToHost);</paragraph>
+ <paragraph index="185" node_type="writer"> cudaDeviceSynchronize();</paragraph>
+ <paragraph index="186" node_type="writer"> [...]</paragraph>
+ <paragraph index="187" node_type="writer"> cudaFree(temp1_dev);</paragraph>
+ <paragraph index="188" node_type="writer"> cudaFree(temp2_dev);</paragraph>
+ <paragraph index="190" node_type="writer">So in summary we cudaMalloc’ed some space for the buffers used by the device, copied the temp1 and temp2 values into them; then we declared the threads number (block size) and the blocks number (grid size) to then call the step_kernel_mod. We kept the block_size as user-defined and computed the needed grid-size so that there were enough threads to span the whole matrix.</paragraph>
+ <paragraph index="191" node_type="writer">The grid size computation presents some subtractions because the algorithm ignores the computation of values on the borders of the matrix, so we need to take the size - 2 and then the ceiling of its division by the block size.</paragraph>
+ <paragraph index="192" node_type="writer">After exiting from the for loop, we transfer the data from the device into temp1, then we synchronize the kernel completion. Finally we free the allocated variables.</paragraph>
+ <paragraph index="194" node_type="writer">The original run, in the remote Colab machine:</paragraph>
+ <paragraph index="195" node_type="writer">- compiling line: gcc -O3 -ffast-math heat.c</paragraph>
+ <paragraph index="196" node_type="writer">- data size: 13000x13000 matrix size, 400 steps</paragraph>
+ <paragraph index="197" node_type="writer">- time taken: 55.795435 seconds</paragraph>
+ <paragraph index="199" node_type="writer">The run with the parallelization:</paragraph>
+ <paragraph index="200" node_type="writer">- compiling line: nvcc heat.c</paragraph>
+ <paragraph index="201" node_type="writer">- data size: 13000x13000 matrix size, 400 steps</paragraph>
+ <paragraph index="202" node_type="writer">- time taken: 3.514749 seconds</paragraph>
+ <paragraph index="203" node_type="writer">In the lab machine with OpenMP we obtained:</paragraph>
+ <paragraph index="204" node_type="writer">- compiling line: icx -O3 -ffast-math heat.c</paragraph>
+ <paragraph index="205" node_type="writer">- data size: 13000x13000 matrix size, 400 steps</paragraph>
+ <paragraph index="206" node_type="writer">- time taken: 29.592816 seconds </paragraph>
+ <paragraph index="208" node_type="writer">The GPU allowed us to save almost 15 times the time spent with only the CPU run with optimization and 10 times the parallelization with OpenMP.</paragraph>
+ <paragraph index="209" node_type="writer">Second version - Shared memory</paragraph>
+ <paragraph index="210" node_type="writer">In this version we try to exploit the usage of shared memory:</paragraph>
+ <paragraph index="211" node_type="writer">__shared__ float sharedMem[(BLOCK_WIDTH + 2) * (BLOCK_HEIGHT + 2)];</paragraph>
+ <paragraph index="213" node_type="writer">That we initialize:</paragraph>
+ <paragraph index="214" node_type="writer">sharedMem[I2D(BLOCK_WIDTH + 2, threadIdx.x + 1, threadIdx.y + 1)] = temp_in[I2D(ni, x, y)];</paragraph>
+ <paragraph index="216" node_type="writer">The idea was the following: as each thread is responsible for one single cell, it means each thread needs to access 5 times into the global memory to retrieve the needed information for the update. 4 out of these 5 reads, however, are redundant with the ones performed by the threads responsible for the immediately adjacent cells, meaning that by allocating a 2D buffer in shared memory we could spare some time during data retrieval.</paragraph>
+ <paragraph index="217" node_type="writer">And by doing so, the calls done previously on the temp1_dev are now shifted to sharedMem:</paragraph>
+ <paragraph index="219" node_type="writer">if(threadIdx.x == 0) sharedMem[I2D(BLOCK_WIDTH + 2, threadIdx.x, threadIdx.y + 1)] = temp_in[I2D(ni, x - 1, y)];</paragraph>
+ <paragraph index="220" node_type="writer"> else if(threadIdx.x == blockDim.x - 1 || x == ni - 2) sharedMem[I2D(BLOCK_WIDTH + 2, threadIdx.x + 2, threadIdx.y + 1)] = temp_in[I2D(ni, x + 1, y)];</paragraph>
+ <paragraph index="222" node_type="writer"> if(threadIdx.y == 0) sharedMem[I2D(BLOCK_WIDTH + 2, threadIdx.x + 1, threadIdx.y)] = temp_in[I2D(ni, x, y - 1)];</paragraph>
+ <paragraph index="223" node_type="writer"> else if(threadIdx.y == blockDim.y - 1 || y == nj - 2) sharedMem[I2D(BLOCK_WIDTH + 2, threadIdx.x + 1, threadIdx.y + 2)] = temp_in[I2D(ni, x, y + 1)];</paragraph>
+ <paragraph index="225" node_type="writer"> __syncthreads();</paragraph>
+ <paragraph index="227" node_type="writer"> // evaluate derivatives</paragraph>
+ <paragraph index="228" node_type="writer"> d2tdx2 = sharedMem[I2D(BLOCK_WIDTH + 2, threadIdx.x, threadIdx.y + 1)]</paragraph>
+ <paragraph index="229" node_type="writer">   - 2 * sharedMem[I2D(BLOCK_WIDTH + 2, threadIdx.x + 1, threadIdx.y + 1)]</paragraph>
+ <paragraph index="230" node_type="writer">   + sharedMem[I2D(BLOCK_WIDTH + 2, threadIdx.x + 2, threadIdx.y + 1)];</paragraph>
+ <paragraph index="232" node_type="writer"> d2tdy2 = sharedMem[I2D(BLOCK_WIDTH + 2, threadIdx.x + 1, threadIdx.y)]</paragraph>
+ <paragraph index="233" node_type="writer">   - 2 * sharedMem[I2D(BLOCK_WIDTH + 2, threadIdx.x + 1, threadIdx.y + 1)]</paragraph>
+ <paragraph index="234" node_type="writer">   + sharedMem[I2D(BLOCK_WIDTH + 2, threadIdx.x + 1, threadIdx.y + 2)];</paragraph>
+ <paragraph index="236" node_type="writer"> // update temperatures</paragraph>
+ <paragraph index="237" node_type="writer"> temp_out[I2D(ni, x, y)] = sharedMem[I2D(BLOCK_WIDTH + 2, threadIdx.x + 1, threadIdx.y + 1)] + fact * (d2tdx2 + d2tdy2);</paragraph>
+ <paragraph index="241" node_type="writer">To see better the difference compared to the first version we also increased the data size.</paragraph>
+ <paragraph index="243" node_type="writer">First version</paragraph>
+ <paragraph index="244" node_type="writer">- compiling line: nvcc heat.c</paragraph>
+ <paragraph index="245" node_type="writer">- data size: 10000x10000 matrix size, 5000 steps</paragraph>
+ <paragraph index="246" node_type="writer">- time taken: 21.750136 seconds</paragraph>
+ <paragraph index="248" node_type="writer">Second version</paragraph>
+ <paragraph index="249" node_type="writer">- compiling line: nvcc heat.c</paragraph>
+ <paragraph index="250" node_type="writer">- data size: 10000x10000 matrix size, 5000 steps</paragraph>
+ <paragraph index="251" node_type="writer">- time taken: 32.240333 seconds</paragraph>
+ <paragraph index="253" node_type="writer">We didn’t achieve the performance that we hoped for and still the first version that doesn’t exploit the shared memory performs faster. This is likely due to the overhead of re-creating the 2D buffer in shared memory after each kernel launch (shared memory is reset after each launch, and there is no way to force all the threads in all SMs to synchronize to keep everything into one long single kernel launch) plus the fact that the shared memory “steals” space from the L1 cache, that the first version of the program probably exploits. </paragraph>
+ <paragraph index="254" node_type="writer">There was the possibility to furtherly optimize the creation of the shared memory buffer, by forcing the threads responsible for the creation of the buffer “halo” inside the same warp, but we abandoned  this idea because:</paragraph>
+ <paragraph index="255" node_type="writer">mapping a 1D id to a 2D halo without using if statements is hard (we thought about using max/min operations but those are still implemented with an if condition) </paragraph>
+ <paragraph index="256" node_type="writer">the performance improvement would have been too small to compensate for those 10 seconds difference between the first program and the second one</paragraph>
+ <paragraph index="259" node_type="writer">Third version - cudaMallocPitch</paragraph>
+ <paragraph index="260" node_type="writer">As a third version we proposed a variation that substitutes the cudaMalloc with cudaMallocPitch and the cudaMemcpy with cudaMemcpy2D. That allows us to tell the GPU to exploit the coalescence, so the alignment in the device memory of the elements present in the 2D buffers with an inner padding.</paragraph>
+ <paragraph index="261" node_type="writer">So the step_kernel_mod becomes:</paragraph>
+ <paragraph index="263" node_type="writer">d2tdx2 = temp_in[I2D(pitch1, x - 1, y)] - 2 * temp_in[I2D(pitch1, x, y)] + temp_in[I2D(pitch1, x + 1, y)];</paragraph>
+ <paragraph index="264" node_type="writer"> d2tdy2 = temp_in[I2D(pitch1, x, y - 1)] - 2 * temp_in[I2D(pitch1, x, y)] + temp_in[I2D(pitch1, x, y + 1)];</paragraph>
+ <paragraph index="266" node_type="writer"> // update temperatures</paragraph>
+ <paragraph index="267" node_type="writer"> temp_out[I2D(pitch2, x, y)] = temp_in[I2D(pitch1, x, y)] + fact * (d2tdx2 + d2tdy2);</paragraph>
+ <paragraph index="269" node_type="writer">And in the main:</paragraph>
+ <paragraph index="270" node_type="writer">size_t pitch1;</paragraph>
+ <paragraph index="271" node_type="writer"> cudaMallocPitch((void**) &amp;temp1_dev, &amp;pitch1,nj,ni);</paragraph>
+ <paragraph index="272" node_type="writer"> size_t pitch2;</paragraph>
+ <paragraph index="273" node_type="writer"> cudaMallocPitch((void**) &amp;temp2_dev, &amp;pitch2,nj,ni);</paragraph>
+ <paragraph index="275" node_type="writer"> cudaMemcpy2D(temp1_dev, pitch1,temp1, nj,nj,ni, cudaMemcpyHostToDevice);</paragraph>
+ <paragraph index="276" node_type="writer"> cudaMemcpy2D(temp2_dev, pitch2,temp2, nj,nj,ni, cudaMemcpyHostToDevice);</paragraph>
+ <paragraph index="279" node_type="writer">Then we compared the three versions:</paragraph>
+ <paragraph index="281" node_type="writer">First version</paragraph>
+ <paragraph index="282" node_type="writer">- compiling line: nvcc heat.c</paragraph>
+ <paragraph index="283" node_type="writer">- data size: 10000x10000 matrix size, 5000 steps</paragraph>
+ <paragraph index="284" node_type="writer">- time taken: 21.750136 seconds</paragraph>
+ <paragraph index="286" node_type="writer">Second version</paragraph>
+ <paragraph index="287" node_type="writer">- compiling line: nvcc heat.c</paragraph>
+ <paragraph index="288" node_type="writer">- data size: 10000x10000 matrix size, 5000 steps</paragraph>
+ <paragraph index="289" node_type="writer">- time taken: 32.240333 seconds</paragraph>
+ <paragraph index="291" node_type="writer">Third version</paragraph>
+ <paragraph index="292" node_type="writer">- compiling line: nvcc heat.c</paragraph>
+ <paragraph index="293" node_type="writer">- data size: 10000x10000 matrix size, 5000 steps</paragraph>
+ <paragraph index="294" node_type="writer">- time taken: 30.195786 seconds</paragraph>
+ <paragraph index="296" node_type="writer">We obtained a better result than the second version, but still the first one is the winner.</paragraph>
+ <paragraph index="298" node_type="writer">Speedup</paragraph>
+ <paragraph index="299" node_type="writer">For this computation we used different combinations of block size and by doing so also of grid size, that is computed starting from the block width and height, observing the time spent. We start from a block_size that is above the warp size of 32 threads.</paragraph>
+ <paragraph index="300" node_type="writer">Respectively in the following &lt;&lt;&lt;grid_size, block_size&gt;&gt;&gt;</paragraph>
+ <object index="303" name="Table2" object_type="table"/>
+ <paragraph index="305" node_type="writer" parent_index="303">Data size</paragraph>
+ <paragraph index="308" node_type="writer" parent_index="303">Steps = 5000</paragraph>
+ <paragraph index="311" node_type="writer" parent_index="303">Matrix = 10000</paragraph>
+ <paragraph index="323" node_type="writer" parent_index="303">Grid size, Block size</paragraph>
+ <paragraph index="326" node_type="writer" parent_index="303">Time spent</paragraph>
+ <paragraph index="329" node_type="writer" parent_index="303">Speedup T1/Tp</paragraph>
+ <paragraph index="332" node_type="writer" parent_index="303">1562500, 64</paragraph>
+ <paragraph index="335" node_type="writer" parent_index="303">32,33</paragraph>
+ <paragraph index="338" node_type="writer" parent_index="303">1</paragraph>
+ <paragraph index="341" node_type="writer" parent_index="303">695556, 144</paragraph>
+ <paragraph index="344" node_type="writer" parent_index="303">36,59</paragraph>
+ <paragraph index="347" node_type="writer" parent_index="303">1</paragraph>
+ <paragraph index="350" node_type="writer" parent_index="303">390625, 256</paragraph>
+ <paragraph index="353" node_type="writer" parent_index="303">32,39</paragraph>
+ <paragraph index="356" node_type="writer" parent_index="303">1</paragraph>
+ <paragraph index="359" node_type="writer" parent_index="303">173889, 576</paragraph>
+ <paragraph index="362" node_type="writer" parent_index="303">41,43</paragraph>
+ <paragraph index="365" node_type="writer" parent_index="303">1</paragraph>
+ <paragraph index="368" node_type="writer" parent_index="303">128164, 784</paragraph>
+ <paragraph index="371" node_type="writer" parent_index="303">35,93</paragraph>
+ <paragraph index="374" node_type="writer" parent_index="303">1</paragraph>
+ <paragraph index="377" node_type="writer" parent_index="303">97969, 1024</paragraph>
+ <paragraph index="380" node_type="writer" parent_index="303">30,42</paragraph>
+ <paragraph index="383" node_type="writer" parent_index="303">1</paragraph>
+ <paragraph index="390" node_type="writer">The amount of threads used in the computation is the same because of the computation of gridSize and blockSize that are inverse proportional dependent. So the amount of time spent is almost the same between several combinations.</paragraph>
+ <paragraph index="395" node_type="writer">The same applies for the speedup, so we don’t achieve great performances.</paragraph>
+ <paragraph index="398" node_type="writer">Conclusions</paragraph>
+ <paragraph index="399" node_type="writer">What we observed is that the accelerator allowed us to save almost 15 times the time spent with only the CPU run with optimization and 10 times with respect to the parallelization with OpenMP. </paragraph>
+ <paragraph index="400" node_type="writer">Unfortunately also by exploiting the shared memory and the coalescence we didn’t achieve better results in terms of time spent.</paragraph>
+ <paragraph index="401" node_type="writer">Also the speedup values are not significant because of the same time spent with different combinations of &lt;&lt;&lt;gridSize, blockSize&gt;&gt;&gt;.</paragraph>
+</indexing>

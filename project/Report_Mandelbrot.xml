@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<indexing>
+ <object alt="" name="image13.png" object_type="graphic"/>
+ <object alt="" name="image4.png" object_type="graphic"/>
+ <object alt="" name="image1.png" object_type="graphic"/>
+ <object alt="" name="image10.png" object_type="graphic"/>
+ <object alt="" name="image2.png" object_type="graphic"/>
+ <object alt="" name="image8.png" object_type="graphic"/>
+ <object alt="" name="image7.png" object_type="graphic"/>
+ <object alt="" name="image5.png" object_type="graphic"/>
+ <object alt="" name="image9.png" object_type="graphic"/>
+ <object alt="" name="image15.png" object_type="graphic"/>
+ <object alt="" name="image12.png" object_type="graphic"/>
+ <object alt="" name="image17.png" object_type="graphic"/>
+ <object alt="" name="image19.png" object_type="graphic"/>
+ <object alt="" name="image3.png" object_type="graphic"/>
+ <object alt="" name="image14.png" object_type="graphic"/>
+ <object alt="" name="image6.png" object_type="graphic"/>
+ <object alt="" name="image11.png" object_type="graphic"/>
+ <object alt="" name="image18.png" object_type="graphic"/>
+ <object alt="" name="image16.png" object_type="graphic"/>
+ <paragraph index="66" node_type="writer">Report Mandelbrot</paragraph>
+ <paragraph index="67" node_type="writer">Authors:</paragraph>
+ <paragraph index="68" node_type="writer">Riccardo Isola 	- S4943369</paragraph>
+ <paragraph index="69" node_type="writer">Gabriele Dellepere 	- S4944557</paragraph>
+ <paragraph index="70" node_type="writer">Kevin Cattaneo 	- S4944382 </paragraph>
+ <paragraph index="71" node_type="writer">Index</paragraph>
+ <object index="73" name="Table of Contents1" object_type="section"/>
+ <paragraph index="74" node_type="writer" parent_index="73">Index	1</paragraph>
+ <paragraph index="75" node_type="writer" parent_index="73">Head of analysis	1</paragraph>
+ <paragraph index="76" node_type="writer" parent_index="73">Hotspot identification	2</paragraph>
+ <paragraph index="77" node_type="writer" parent_index="73">Vectorization issues	3</paragraph>
+ <paragraph index="78" node_type="writer" parent_index="73">Best sequential time	4</paragraph>
+ <paragraph index="79" node_type="writer" parent_index="73">OpenMP Parallelization	6</paragraph>
+ <paragraph index="80" node_type="writer" parent_index="73">Speedup and efficiency	8</paragraph>
+ <paragraph index="81" node_type="writer" parent_index="73">CUDA Parallelization	10</paragraph>
+ <paragraph index="82" node_type="writer" parent_index="73">Speedup with accelerator	13</paragraph>
+ <paragraph index="83" node_type="writer" parent_index="73">MPI Parallelization	14</paragraph>
+ <paragraph index="84" node_type="writer" parent_index="73">MPI vs OpenMP speedup	16</paragraph>
+ <paragraph index="85" node_type="writer" parent_index="73">Conclusions	19</paragraph>
+ <paragraph index="88" node_type="writer">Head of analysis</paragraph>
+ <paragraph index="89" node_type="writer">Algorithm: the code provided has quadratic N^3 (cubical) complexity.</paragraph>
+ <paragraph index="90" node_type="writer">Tools: we used the icpx compiler, the Intel one, and Intel Advisor GUI to perform the most of the analysis.</paragraph>
+ <paragraph index="91" node_type="writer">Machine: the machine on which we run the code has 20 processors:</paragraph>
+ <paragraph index="92" node_type="writer">12 core</paragraph>
+ <paragraph index="93" node_type="writer">8 performance cores with hyperthreading up to 2</paragraph>
+ <paragraph index="94" node_type="writer">4 efficiency cores</paragraph>
+ <paragraph index="96" node_type="writer">For the current analysis we decided to fix the RESOLUTION that is WIDTHxHEIGHT and to iterate different runs over different ITERATIONS.</paragraph>
+ <paragraph index="97" node_type="writer">We also changed the original time function with the OpenMP library one to be more precise (the original one was rounding on seconds).</paragraph>
+ <paragraph index="99" node_type="writer">Hotspot identification</paragraph>
+ <paragraph index="100" node_type="writer">In first place we compiled the program:</paragraph>
+ <paragraph index="101" node_type="writer">- compiling line: icpx -g -fopenmp mandelbrot.cpp</paragraph>
+ <paragraph index="102" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=700</paragraph>
+ <paragraph index="103" node_type="writer">- time taken: 49.70 seconds</paragraph>
+ <paragraph index="105" node_type="writer">Then we put the executable into intel advisor to perform a detailed analysis, where we identified the following hotspots.</paragraph>
+ <paragraph index="106" node_type="writer">What we discovered is that the hotspot is the main loop at line 44, contained in the one at line 34, so the one that performs the mandelbrot computation. So the main objective will be trying to parallelize the external one, since the inner one has the dependence on the previous value of z at each iteration.</paragraph>
+ <object index="108" name="Table1" object_type="table"/>
+ <paragraph index="110" node_type="writer" parent_index="108">Name</paragraph>
+ <paragraph index="113" node_type="writer" parent_index="108">Time taken (seconds)</paragraph>
+ <paragraph index="116" node_type="writer" parent_index="108">Overall program</paragraph>
+ <paragraph index="119" node_type="writer" parent_index="108">49.70</paragraph>
+ <paragraph index="122" node_type="writer" parent_index="108">_libm_hypot</paragraph>
+ <paragraph index="125" node_type="writer" parent_index="108">20.45</paragraph>
+ <paragraph index="128" node_type="writer" parent_index="108">operator+&lt;double&gt;</paragraph>
+ <paragraph index="131" node_type="writer" parent_index="108">7.67</paragraph>
+ <paragraph index="134" node_type="writer" parent_index="108">complex&lt;double&gt;</paragraph>
+ <paragraph index="137" node_type="writer" parent_index="108">3.79</paragraph>
+ <paragraph index="140" node_type="writer" parent_index="108">loop in main - line 60</paragraph>
+ <paragraph index="143" node_type="writer" parent_index="108">3.78</paragraph>
+ <paragraph index="150" node_type="writer">As we can see from the survey section, the main hotspots are the math operations of _libm_hypot that performs the Euclidean distance, the override of the operator + for double in the library std, the conversion into complex from double, then the main loop that we can optimize, that performs the power operation. The remaining most taken times are taken again by other math operations like abs on double and operator + on complex type.</paragraph>
+ <paragraph index="151" node_type="writer">As we can see on the roofline, the point that we can optimize is the third from the left, that is the green one representing the main loop.</paragraph>
+ <paragraph index="153" node_type="writer">Vectorization issues</paragraph>
+ <paragraph index="154" node_type="writer">To obtain the report about vectorization infos, we specified the level 3:</paragraph>
+ <paragraph index="156" node_type="writer">First</paragraph>
+ <paragraph index="157" node_type="writer">- compiling line: icpx -O3 -xHost -qopt-report=3 mandelbrot.cpp</paragraph>
+ <paragraph index="158" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=700</paragraph>
+ <paragraph index="159" node_type="writer">- time taken: 2.27 seconds</paragraph>
+ <paragraph index="161" node_type="writer">The mandelbrot.optrpt report told us the following:</paragraph>
+ <paragraph index="162" node_type="writer">LOOP BEGIN at mandelbrot.cpp (50, 5)</paragraph>
+ <paragraph index="163" node_type="writer">remark #15541: loop was not vectorized: outer loop is not an auto-vectorization candidate.</paragraph>
+ <paragraph index="165" node_type="writer">LOOP BEGIN at mandelbrot.cpp (60, 9)</paragraph>
+ <paragraph index="166" node_type="writer">remark #15344: Loop was not vectorized: vector dependence prevents vectorization</paragraph>
+ <paragraph index="167" node_type="writer">that is the dependence on the z we pointed out previously</paragraph>
+ <paragraph index="169" node_type="writer">The reason we cannot apply vectorization to the inner loop is that each iteration depends on the value of z produced by the previous one (to vectorize it we should already know beforehand all values assumed by z, which, besides being impossible, would actually make the whole loop pointless).</paragraph>
+ <paragraph index="170" node_type="writer">Apparently, we cannot vectorize the outer loop either, even though it looks like it could be possible by “simply” placing the z and c variables for different values of pos inside a vector. After long considerations we ended up with the following conclusions:</paragraph>
+ <paragraph index="171" node_type="writer">First and foremost, the break statement inside the inner loop is problematic: for some pos, z causes the break earlier than others, this could be solved by avoiding the break altogether and setting the update to image[pos] as a conditional assignment controlled by a ternary operator (which is vectorizable). This solution would however cause some overhead because of the addition of several useless iterations</paragraph>
+ <paragraph index="172" node_type="writer">Secondly, z and c are complex numbers, which means to perform the pow operation the processor needs to:</paragraph>
+ <paragraph index="173" node_type="writer">convert z into polar coordinates</paragraph>
+ <paragraph index="174" node_type="writer">apply exponentiation to the modulus and multiplication to the angle </paragraph>
+ <paragraph index="175" node_type="writer">re-convert to cartesian coordinates (to allow the sum with c)</paragraph>
+ <paragraph index="176" node_type="writer">Each of these steps comes with some problems. To convert the number into polar coordinates we need the atan function, which could be approximated with a Taylor series, but it is not implemented by default as a vectorized operation. The same problem is posed by the conversion back to cartesian coordinates (we can approximate sin and cos with Taylor but there is no default vectorized implementation). Lastly, even the simple exponentiation applied to the modulus is not vectorizable by default. It is worth to notice that the intel compiler provides specific implementations for some of these methods, however using them would make the code less portable and give us little to no benefit (because of the overhead still caused by the break removal), meaning that for this project, we’re going to give up on vectorization.</paragraph>
+ <paragraph index="177" node_type="writer">Best sequential time</paragraph>
+ <paragraph index="178" node_type="writer">Now we perform different runs to find the best sequential time, to be used as reference for the further parallel application, by passing several arguments and flags to the intel compiler.</paragraph>
+ <paragraph index="180" node_type="writer">Original without optimizations</paragraph>
+ <paragraph index="181" node_type="writer">- compiling line: icpx -O0 -fopenmp mandelbrot.cpp</paragraph>
+ <paragraph index="182" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=700</paragraph>
+ <paragraph index="183" node_type="writer">- time taken: 50.488 seconds</paragraph>
+ <paragraph index="185" node_type="writer">Compared to the one with the flag optimizations:</paragraph>
+ <paragraph index="186" node_type="writer">- compiling line: icpx -g -fopenmp -O3 -xHost -ffast-math mandelbrot.cpp</paragraph>
+ <paragraph index="187" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=700</paragraph>
+ <paragraph index="188" node_type="writer">- time taken: 2.422 seconds</paragraph>
+ <paragraph index="191" node_type="writer">Then we tried different combinations of flags to find the best combination in terms of time, to make this difference more visible, we also increased the data size. With that we identified the best sequential case with data size equal to 10000 iterations.</paragraph>
+ <paragraph index="192" node_type="writer">- compiling line: icpx -fopenmp -O3 -xHost mandelbrot.cpp</paragraph>
+ <paragraph index="193" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=10000</paragraph>
+ <paragraph index="194" node_type="writer">- time taken: 31.3712 seconds</paragraph>
+ <paragraph index="196" node_type="writer">- compiling line: icpx -fopenmp -O3 -xHost -ffast-math mandelbrot.cpp</paragraph>
+ <paragraph index="197" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=10000</paragraph>
+ <paragraph index="198" node_type="writer">- time taken: 31.2874 seconds</paragraph>
+ <paragraph index="200" node_type="writer">- compiling line: icpx -fopenmp -O3 -xHost -ipo mandelbrot.cpp</paragraph>
+ <paragraph index="201" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=10000</paragraph>
+ <paragraph index="202" node_type="writer">- time taken: 31.4665 seconds</paragraph>
+ <paragraph index="204" node_type="writer">- compiling line: icpx -fopenmp -O3 -xHost -ipo -ffast-math mandelbrot.cpp</paragraph>
+ <paragraph index="205" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=10000</paragraph>
+ <paragraph index="206" node_type="writer">- time taken: 31.3204 seconds</paragraph>
+ <paragraph index="208" node_type="writer">We see a little difference, so there is no best combination.</paragraph>
+ <paragraph index="210" node_type="writer">Overall we are applying the best optimizations arguments:</paragraph>
+ <paragraph index="211" node_type="writer">O3: to allow the compiler to optimize the code, so that it can reorder the operations in the most efficient way</paragraph>
+ <paragraph index="212" node_type="writer">xHost: to achieve the best assembly instructions specifically on the current machine architecture</paragraph>
+ <paragraph index="213" node_type="writer">ipo: to enable interprocedural optimizations; we observed that with this flag the program didn’t achieve better performances</paragraph>
+ <paragraph index="214" node_type="writer">fast-math: to reduce the time needed for mathematical operations, although reducing the precision of our calculations.</paragraph>
+ <paragraph index="216" node_type="writer">We also check on the roofline the result obtained so far with the combination of flags, also decreasing the data size for a matter of time spent by Intel Advisor:</paragraph>
+ <paragraph index="217" node_type="writer">- compiling line: icpx -fopenmp -O3 -xHost -ffast-math mandelbrot.cpp</paragraph>
+ <paragraph index="218" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=700</paragraph>
+ <paragraph index="219" node_type="writer">- time taken: 2.23492 seconds</paragraph>
+ <paragraph index="224" node_type="writer">By exploiting the optimization flags we achieved the reduction in time of the hotspots, so the math computations on double and complex numbers.</paragraph>
+ <paragraph index="225" node_type="writer">Also the advisor suggests that we have some data type conversion between two different widths, that’s because of the conversion from complex to real and vice versa, that can’t be avoided because of the algorithm implementation.</paragraph>
+ <paragraph index="226" node_type="writer">Also there are some notifications about 2 system calls used and also a reduction suggested, but those can’t apply actually to the algorithm, so it’s an hallucination of Advisor.</paragraph>
+ <paragraph index="228" node_type="writer">OpenMP Parallelization</paragraph>
+ <paragraph index="230" node_type="writer">To compare we fix the same data size of before and we run the parallelization.</paragraph>
+ <paragraph index="231" node_type="writer">On line 49 we put the following line:</paragraph>
+ <paragraph index="232" node_type="writer"># pragma omp parallel for default(none) shared(image)</paragraph>
+ <paragraph index="234" node_type="writer">We compare the original best sequential run without pragma:</paragraph>
+ <paragraph index="235" node_type="writer">- compiling line: icpx -fopenmp -O3 -xHost -ffast-math mandelbrot.cpp</paragraph>
+ <paragraph index="236" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=10000</paragraph>
+ <paragraph index="237" node_type="writer">- time taken: 31.2413 seconds</paragraph>
+ <paragraph index="239" node_type="writer">With pragma enabled:</paragraph>
+ <paragraph index="240" node_type="writer">- compiling line: icpx -fopenmp -O3 -xHost -ffast-math mandelbrot.cpp</paragraph>
+ <paragraph index="241" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=10000</paragraph>
+ <paragraph index="242" node_type="writer">- number of threads: 20 (decided by scheduler)</paragraph>
+ <paragraph index="243" node_type="writer">- time taken: 4.10494 seconds</paragraph>
+ <paragraph index="245" node_type="writer">We reduced the time needed by 8 times, also exploiting the maximum power of our machine in terms of threads.</paragraph>
+ <paragraph index="246" node_type="writer">Now we increase the data size to test the limits by trying different combinations of the usage of the pragma instructions.</paragraph>
+ <paragraph index="248" node_type="writer">- compiling line: icpx -fopenmp -O3 -xHost -ipo -ffast-math mandelbrot.cpp</paragraph>
+ <paragraph index="249" node_type="writer">- data size:  RESOLUTION=1000, ITERATIONS=80000</paragraph>
+ <paragraph index="250" node_type="writer">- number of threads: 20 (decided by scheduler)</paragraph>
+ <paragraph index="251" node_type="writer">- time taken: 30.3726 seconds</paragraph>
+ <paragraph index="257" node_type="writer">We increased our data size and our arithmetic intensity achieving great results with respect to the non-parallel one. For some reason Advisor hallucinates and gives some 300s of runtime even if the program is correctly recognized to have ~30s of runtime.</paragraph>
+ <paragraph index="260" node_type="writer">Speedup and efficiency</paragraph>
+ <paragraph index="262" node_type="writer">As possible number of processors, we chose:</paragraph>
+ <paragraph index="263" node_type="writer">1: sequential run</paragraph>
+ <paragraph index="264" node_type="writer">2: enable parallelization</paragraph>
+ <paragraph index="265" node_type="writer">4: equal to the number of performance cores</paragraph>
+ <paragraph index="266" node_type="writer">12: equal to the number of all cores without considering hyperthreading</paragraph>
+ <paragraph index="267" node_type="writer">20: the maximum value of processors considering hyperthreading up to 2</paragraph>
+ <paragraph index="268" node_type="writer">30: to observe any overhead</paragraph>
+ <paragraph index="270" node_type="writer">compiling line: icpx -g -fopenmp -O3 -xHost -ipo -ffast-math mandelbrot.cpp</paragraph>
+ <object index="273" name="Table2" object_type="table"/>
+ <paragraph index="275" node_type="writer" parent_index="273">Data size</paragraph>
+ <paragraph index="278" node_type="writer" parent_index="273">RESOLUTION=1000</paragraph>
+ <paragraph index="281" node_type="writer" parent_index="273">ITERATIONS=10000</paragraph>
+ <paragraph index="299" node_type="writer" parent_index="273">N processors</paragraph>
+ <paragraph index="302" node_type="writer" parent_index="273">Time spent</paragraph>
+ <paragraph index="305" node_type="writer" parent_index="273">Speedup T1/Tp</paragraph>
+ <paragraph index="308" node_type="writer" parent_index="273">Efficiency</paragraph>
+ <paragraph index="311" node_type="writer" parent_index="273">1</paragraph>
+ <paragraph index="314" node_type="writer" parent_index="273">31,05</paragraph>
+ <paragraph index="317" node_type="writer" parent_index="273">1</paragraph>
+ <paragraph index="320" node_type="writer" parent_index="273">1.00</paragraph>
+ <paragraph index="323" node_type="writer" parent_index="273">2</paragraph>
+ <paragraph index="326" node_type="writer" parent_index="273">15,53</paragraph>
+ <paragraph index="329" node_type="writer" parent_index="273">2.00</paragraph>
+ <paragraph index="332" node_type="writer" parent_index="273">1.00</paragraph>
+ <paragraph index="335" node_type="writer" parent_index="273">4</paragraph>
+ <paragraph index="338" node_type="writer" parent_index="273">12,93</paragraph>
+ <paragraph index="341" node_type="writer" parent_index="273">2.40</paragraph>
+ <paragraph index="344" node_type="writer" parent_index="273">0.80</paragraph>
+ <paragraph index="347" node_type="writer" parent_index="273">12</paragraph>
+ <paragraph index="350" node_type="writer" parent_index="273">5,66</paragraph>
+ <paragraph index="353" node_type="writer" parent_index="273">5.48</paragraph>
+ <paragraph index="356" node_type="writer" parent_index="273">0.46</paragraph>
+ <paragraph index="359" node_type="writer" parent_index="273">20</paragraph>
+ <paragraph index="362" node_type="writer" parent_index="273">3,71</paragraph>
+ <paragraph index="365" node_type="writer" parent_index="273">8.37</paragraph>
+ <paragraph index="368" node_type="writer" parent_index="273">0.42</paragraph>
+ <paragraph index="371" node_type="writer" parent_index="273">30</paragraph>
+ <paragraph index="374" node_type="writer" parent_index="273">3,33</paragraph>
+ <paragraph index="377" node_type="writer" parent_index="273">9.32</paragraph>
+ <paragraph index="380" node_type="writer" parent_index="273">0.31</paragraph>
+ <paragraph index="387" node_type="writer">We observe that after enabling the parallelization with 2 processors, the time spent drastically decreases, while remaining more or less stable after 12 processors.</paragraph>
+ <paragraph index="391" node_type="writer">Here we see that the speedup increases in different sections, in particular after enabling the parallelization with 2 processors, then a huge peak after 4.</paragraph>
+ <paragraph index="395" node_type="writer">On the other hand, the efficiency remains more or less stable up to 4 processors, then starts decreasing, but the most decreased distance is from 2 processors.</paragraph>
+ <paragraph index="396" node_type="writer">CUDA Parallelization</paragraph>
+ <paragraph index="397" node_type="writer">As first thing we explored some specifications of the machine on which we are running on via devicequery:</paragraph>
+ <paragraph index="399" node_type="writer">Device 0: &quot;Tesla T4&quot;</paragraph>
+ <paragraph index="400" node_type="writer">  CUDA Driver Version / Runtime Version          12.2 / 12.2</paragraph>
+ <paragraph index="401" node_type="writer">  CUDA Capability Major/Minor version number:    7.5</paragraph>
+ <paragraph index="402" node_type="writer">  Total amount of global memory:                 15102 MBytes (15835660288 bytes)</paragraph>
+ <paragraph index="403" node_type="writer">  (040) Multiprocessors, (064) CUDA Cores/MP:    2560 CUDA Cores</paragraph>
+ <paragraph index="404" node_type="writer">  GPU Max Clock rate:                            1590 MHz (1.59 GHz)</paragraph>
+ <paragraph index="405" node_type="writer">  Memory Clock rate:                             5001 Mhz</paragraph>
+ <paragraph index="406" node_type="writer">  Memory Bus Width:                              256-bit</paragraph>
+ <paragraph index="407" node_type="writer">  L2 Cache Size:                                 4194304 bytes</paragraph>
+ <paragraph index="408" node_type="writer">  Maximum Texture Dimension Size (x,y,z)         1D=(131072), 2D=(131072, 65536), 3D=(16384, 16384, 16384)</paragraph>
+ <paragraph index="409" node_type="writer">  Maximum Layered 1D Texture Size, (num) layers  1D=(32768), 2048 layers</paragraph>
+ <paragraph index="410" node_type="writer">  Maximum Layered 2D Texture Size, (num) layers  2D=(32768, 32768), 2048 layers</paragraph>
+ <paragraph index="411" node_type="writer">  Total amount of constant memory:               65536 bytes</paragraph>
+ <paragraph index="412" node_type="writer">  Total amount of shared memory per block:       49152 bytes</paragraph>
+ <paragraph index="413" node_type="writer">  Total shared memory per multiprocessor:        65536 bytes</paragraph>
+ <paragraph index="414" node_type="writer">  Total number of registers available per block: 65536</paragraph>
+ <paragraph index="415" node_type="writer">  Warp size:                                     32</paragraph>
+ <paragraph index="416" node_type="writer">  Maximum number of threads per multiprocessor:  1024</paragraph>
+ <paragraph index="417" node_type="writer">  Maximum number of threads per block:           1024</paragraph>
+ <paragraph index="418" node_type="writer">  Max dimension size of a thread block (x,y,z): (1024, 1024, 64)</paragraph>
+ <paragraph index="419" node_type="writer">  Max dimension size of a grid size    (x,y,z): (2147483647, 65535, 65535)</paragraph>
+ <paragraph index="420" node_type="writer">[...]</paragraph>
+ <paragraph index="422" node_type="writer">So the maximum number of threads that we can use per block is 1024, scheduled in warps of 32 threads. Also we have available 40 Streaming Multiprocessors (each with 2 warp schedulers), for a total available maximum of 2560 concurrent threads scheduled at each clock cycle.</paragraph>
+ <paragraph index="424" node_type="writer">The main idea was to unroll the for loop inside the function main that generates the mandelbrot matrix via indexes, and so we parallelize each pos, so pixels.</paragraph>
+ <paragraph index="425" node_type="writer">So our kernel is implemented as follows:</paragraph>
+ <paragraph index="427" node_type="writer">__global__ void kernel(int* image)</paragraph>
+ <paragraph index="428" node_type="writer">{</paragraph>
+ <paragraph index="429" node_type="writer"> int pos = threadIdx.x + blockIdx.x * blockDim.x;</paragraph>
+ <paragraph index="431" node_type="writer"> if(pos &gt; WIDTH*HEIGHT) return;</paragraph>
+ <paragraph index="433" node_type="writer"> // evaluate derivatives</paragraph>
+ <paragraph index="435" node_type="writer"> image[pos] = 0;</paragraph>
+ <paragraph index="437" node_type="writer"> const int row = pos / WIDTH;</paragraph>
+ <paragraph index="438" node_type="writer"> const int col = pos % WIDTH;</paragraph>
+ <paragraph index="439" node_type="writer"> const cuda::std::complex&lt;double&gt; c(col * STEP + MIN_X, row * STEP + MIN_Y);</paragraph>
+ <paragraph index="441" node_type="writer"> // z = z^2 + c</paragraph>
+ <paragraph index="442" node_type="writer"> cuda::std::complex&lt;double&gt; z(0, 0);</paragraph>
+ <paragraph index="443" node_type="writer"> for (int i = 1; i &lt;= ITERATIONS; i++)</paragraph>
+ <paragraph index="444" node_type="writer"> {</paragraph>
+ <paragraph index="445" node_type="writer">     z = cuda::std::pow(z, DEGREE) + c;</paragraph>
+ <paragraph index="447" node_type="writer">     // If it is convergent</paragraph>
+ <paragraph index="448" node_type="writer">     if (cuda::std::abs(z) &gt;= 2)</paragraph>
+ <paragraph index="449" node_type="writer">     {</paragraph>
+ <paragraph index="450" node_type="writer">         image[pos] = i;</paragraph>
+ <paragraph index="451" node_type="writer">         break;</paragraph>
+ <paragraph index="452" node_type="writer">     }</paragraph>
+ <paragraph index="453" node_type="writer"> }</paragraph>
+ <paragraph index="455" node_type="writer">}</paragraph>
+ <paragraph index="457" node_type="writer">And in the main:</paragraph>
+ <paragraph index="458" node_type="writer">const int size=WIDTH*HEIGHT;</paragraph>
+ <paragraph index="460" node_type="writer">   int *image_dev;</paragraph>
+ <paragraph index="462" node_type="writer">   cudaMalloc((void**) &amp;image_dev, size);</paragraph>
+ <paragraph index="464" node_type="writer">   cudaMemcpy(image_dev, image, size, cudaMemcpyHostToDevice);</paragraph>
+ <paragraph index="466" node_type="writer">   dim3 block_size(BLOCK_SIZE);</paragraph>
+ <paragraph index="467" node_type="writer">   dim3 grid_size = dim3((size - 1) / BLOCK_SIZE + 1);</paragraph>
+ <paragraph index="469" node_type="writer">   // Execute the modified version using same data</paragraph>
+ <paragraph index="470" node_type="writer">   kernel&lt;&lt;&lt;grid_size, block_size&gt;&gt;&gt;(image_dev);</paragraph>
+ <paragraph index="471" node_type="writer">   cudaMemcpy(image, image_dev, size, cudaMemcpyDeviceToHost);</paragraph>
+ <paragraph index="473" node_type="writer">   cudaDeviceSynchronize();</paragraph>
+ <paragraph index="475" node_type="writer">   cudaFree(image_dev);</paragraph>
+ <paragraph index="479" node_type="writer">The original run, in the remote Colab machine:</paragraph>
+ <paragraph index="480" node_type="writer">- compiling line: g++ -O3 -ffast-math mandelbrot.cpp</paragraph>
+ <paragraph index="481" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=10000</paragraph>
+ <paragraph index="482" node_type="writer">- time taken: 73.682 seconds</paragraph>
+ <paragraph index="484" node_type="writer">The run with the parallelization:</paragraph>
+ <paragraph index="485" node_type="writer">- compiling line: nvcc mandelbrot.cpp</paragraph>
+ <paragraph index="486" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=10000</paragraph>
+ <paragraph index="487" node_type="writer">- time taken: 5.32149 seconds</paragraph>
+ <paragraph index="488" node_type="writer">- note: with a BLOCK_SIZE of 256 (we obtain similar result also with 32 since we schedule the entire warp), in this case to exploit multiple scheduling of the warps</paragraph>
+ <paragraph index="490" node_type="writer">In the lab machine with OpenMP we obtained:</paragraph>
+ <paragraph index="491" node_type="writer">- compiling line: icpx -fopenmp -O3 -xHost -ffast-math mandelbrot.cpp</paragraph>
+ <paragraph index="492" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=10000</paragraph>
+ <paragraph index="493" node_type="writer">- number of threads: 20 (decided by scheduler)</paragraph>
+ <paragraph index="494" node_type="writer">- time taken: 4.10494 seconds</paragraph>
+ <paragraph index="496" node_type="writer">It seems that at this time the computation with the accelerator didn’t win over the OpenMP implementation, even if for just a second. On the other hand we expect that if we increase the resolution we increase the number of  same operations that need to be applied just on a larger scale (matrix). Given that the accelerator should perform better than the OpenMP implementation, since we scaled on the iterations.</paragraph>
+ <paragraph index="498" node_type="writer">The run with the parallelization:</paragraph>
+ <paragraph index="499" node_type="writer">- compiling line: nvcc mandelbrot.cpp</paragraph>
+ <paragraph index="500" node_type="writer">- data size: RESOLUTION=3000, ITERATIONS=5000</paragraph>
+ <paragraph index="501" node_type="writer">- time taken: 11.0791 seconds</paragraph>
+ <paragraph index="502" node_type="writer">- note: with a BLOCK_SIZE of 256</paragraph>
+ <paragraph index="504" node_type="writer">In the lab machine with OpenMP we obtained:</paragraph>
+ <paragraph index="505" node_type="writer">- compiling line: icpx -fopenmp -O3 -xHost -ffast-math mandelbrot.cpp</paragraph>
+ <paragraph index="506" node_type="writer">- data size: RESOLUTION=3000, ITERATIONS=5000</paragraph>
+ <paragraph index="507" node_type="writer">- number of threads: 20 (decided by scheduler)</paragraph>
+ <paragraph index="508" node_type="writer">- time taken: 20.171 seconds</paragraph>
+ <paragraph index="510" node_type="writer">As expected we obtained a better result from the GPU when scaling over resolutions.</paragraph>
+ <paragraph index="511" node_type="writer">Speedup with accelerator</paragraph>
+ <paragraph index="512" node_type="writer">For this computation we used different combinations of block size and by doing so also of grid size, that is computed starting from the block width and height, observing the time spent. We start from a block_size that is above the warp size of 32 threads.</paragraph>
+ <paragraph index="513" node_type="writer">Respectively in the following &lt;&lt;&lt;grid_size, block_size&gt;&gt;&gt;</paragraph>
+ <object index="515" name="Table3" object_type="table"/>
+ <paragraph index="517" node_type="writer" parent_index="515">Data size</paragraph>
+ <paragraph index="520" node_type="writer" parent_index="515">RESOLUTION=1000</paragraph>
+ <paragraph index="523" node_type="writer" parent_index="515">ITERATIONS=70000</paragraph>
+ <paragraph index="535" node_type="writer" parent_index="515">N processors</paragraph>
+ <paragraph index="538" node_type="writer" parent_index="515">Time spent</paragraph>
+ <paragraph index="541" node_type="writer" parent_index="515">Speedup T1/Tp</paragraph>
+ <paragraph index="544" node_type="writer" parent_index="515">187500, 32</paragraph>
+ <paragraph index="547" node_type="writer" parent_index="515">35,83</paragraph>
+ <paragraph index="550" node_type="writer" parent_index="515">1</paragraph>
+ <paragraph index="553" node_type="writer" parent_index="515">93750, 64</paragraph>
+ <paragraph index="556" node_type="writer" parent_index="515">34,87</paragraph>
+ <paragraph index="559" node_type="writer" parent_index="515">1</paragraph>
+ <paragraph index="562" node_type="writer" parent_index="515">46875, 128</paragraph>
+ <paragraph index="565" node_type="writer" parent_index="515">34,86</paragraph>
+ <paragraph index="568" node_type="writer" parent_index="515">1</paragraph>
+ <paragraph index="571" node_type="writer" parent_index="515">23438, 256</paragraph>
+ <paragraph index="574" node_type="writer" parent_index="515">35,00</paragraph>
+ <paragraph index="577" node_type="writer" parent_index="515">1</paragraph>
+ <paragraph index="580" node_type="writer" parent_index="515">11719, 512</paragraph>
+ <paragraph index="583" node_type="writer" parent_index="515">35,27</paragraph>
+ <paragraph index="586" node_type="writer" parent_index="515">1</paragraph>
+ <paragraph index="589" node_type="writer" parent_index="515">5860, 1024</paragraph>
+ <paragraph index="592" node_type="writer" parent_index="515">35,89</paragraph>
+ <paragraph index="595" node_type="writer" parent_index="515">1</paragraph>
+ <paragraph index="599" node_type="writer">Since the gridSize and the blockSize are inverse proportional dependent, the number of threads scheduled is the same. The time achieved is almost the same in each run.</paragraph>
+ <paragraph index="601" node_type="writer">The same applies also for speedup, not achieving great difference.</paragraph>
+ <paragraph index="603" node_type="writer">MPI Parallelization</paragraph>
+ <paragraph index="604" node_type="writer">The last form of parallelization we could exploit was to split the computation of different sections of the image among different processes and use message passing to rebuild the final mandelbrot image inside the root process. To achieve this, we used MPI: the idea was simple, split the workload by assigning to each process an “equal” amount of pixels to fill, run the computations independently, and then perform a Gather on the partial results to assemble the final image. The only caveat of this procedure was that there was no guarantee that the amount of pixels in the image would be multiple of the number of processes: this tiny detail meant that we had to use the MPI_Gatherv instead of the simpler MPI_Gather (each process could be responsible of either n or n+1 pixels). We also had to define 2 auxiliary functions, one to decide how much work to assign to each process and another one to compute the array displacements to use in the Gatherv.</paragraph>
+ <paragraph index="607" node_type="writer">Completed this part it was simply a question of adding the MPI instructions in the main to initialize MPI, retrieve the communicator rank and size, set the workstart and worksize depending on the rank and then perform the gatherv and finalize.</paragraph>
+ <paragraph index="611" node_type="writer">MPI vs OpenMP speedup</paragraph>
+ <paragraph index="612" node_type="writer">We first tried to use just MPI and reset the iterations amount:</paragraph>
+ <paragraph index="614" node_type="writer">- compiling line: mpiicpx -fopenmp -O3 -xHost -ffast-math -D_MPI_ mandelbot.cpp</paragraph>
+ <paragraph index="615" node_type="writer">- exec line: mpiexec -np &lt;N processes&gt; ./a.out image</paragraph>
+ <paragraph index="617" node_type="writer">Note: at this point we had wrapped the OpenMP pragma inside an #ifdef OMP, the -fopenmp parameter is there just to avoid compilation errors because of the function used to capture the time</paragraph>
+ <object index="620" name="Table4" object_type="table"/>
+ <paragraph index="622" node_type="writer" parent_index="620">Data size</paragraph>
+ <paragraph index="625" node_type="writer" parent_index="620">RESOLUTION=1000</paragraph>
+ <paragraph index="628" node_type="writer" parent_index="620">ITERATIONS=10000</paragraph>
+ <paragraph index="646" node_type="writer" parent_index="620">N processes</paragraph>
+ <paragraph index="649" node_type="writer" parent_index="620">Time spent</paragraph>
+ <paragraph index="652" node_type="writer" parent_index="620">Speedup T1/Tp</paragraph>
+ <paragraph index="655" node_type="writer" parent_index="620">Efficiency</paragraph>
+ <paragraph index="658" node_type="writer" parent_index="620">1</paragraph>
+ <paragraph index="661" node_type="writer" parent_index="620">31.05</paragraph>
+ <paragraph index="664" node_type="writer" parent_index="620">1</paragraph>
+ <paragraph index="667" node_type="writer" parent_index="620">1.00</paragraph>
+ <paragraph index="670" node_type="writer" parent_index="620">2</paragraph>
+ <paragraph index="673" node_type="writer" parent_index="620">15.55</paragraph>
+ <paragraph index="676" node_type="writer" parent_index="620">2.00</paragraph>
+ <paragraph index="679" node_type="writer" parent_index="620">1.00</paragraph>
+ <paragraph index="682" node_type="writer" parent_index="620">4</paragraph>
+ <paragraph index="685" node_type="writer" parent_index="620">12.94</paragraph>
+ <paragraph index="688" node_type="writer" parent_index="620">2.40</paragraph>
+ <paragraph index="691" node_type="writer" parent_index="620">0.80</paragraph>
+ <paragraph index="694" node_type="writer" parent_index="620">12</paragraph>
+ <paragraph index="697" node_type="writer" parent_index="620">5.87</paragraph>
+ <paragraph index="700" node_type="writer" parent_index="620">5.28</paragraph>
+ <paragraph index="703" node_type="writer" parent_index="620">0,46</paragraph>
+ <paragraph index="706" node_type="writer" parent_index="620">20</paragraph>
+ <paragraph index="709" node_type="writer" parent_index="620">5.35</paragraph>
+ <paragraph index="712" node_type="writer" parent_index="620">5.80</paragraph>
+ <paragraph index="715" node_type="writer" parent_index="620">0.29</paragraph>
+ <paragraph index="718" node_type="writer" parent_index="620">30</paragraph>
+ <paragraph index="721" node_type="writer" parent_index="620">5.62</paragraph>
+ <paragraph index="724" node_type="writer" parent_index="620">5.52</paragraph>
+ <paragraph index="727" node_type="writer" parent_index="620">0.18</paragraph>
+ <paragraph index="737" node_type="writer">We can see that with 1 process there is no difference between this version of the program and the sequential one, as expected. Splitting the computation among many processes, instead, gives us a speedup similar to the one we obtained with OpenMP: we must acknowledge, however, that using MPI on a single machine is slightly slower than just OpenMP, since the message passing causes overhead. We also need to consider that context switch between processes is way slower with respect to threads of the same process, meaning that if we use all 20 available cores to compute the mandelbrot on 20 different process, and at the same time our machine is running some other service (just like any normal machine), we should expect a lot of heavy context switches to happen during the execution of our program. This became even more clear when we increased the number of iterations to the amount that took the OpenMP version 30 seconds to complete:</paragraph>
+ <paragraph index="739" node_type="writer">- compiling line: mpiicpx -fopenmp -O3 -xHost -ffast-math -DITERATIONS=80000 -D_MPI_ mandelbot.cpp</paragraph>
+ <paragraph index="740" node_type="writer">- exec line: mpiexec -np 20 ./a.out image</paragraph>
+ <paragraph index="741" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=80000</paragraph>
+ <paragraph index="742" node_type="writer">- time taken: 48.4521 seconds</paragraph>
+ <paragraph index="744" node_type="writer">After these tests, we wondered what would happen if we tried to combine MPI with OpenMP: it’s no wonder that it would make the program very efficient if we could split it across multiple machines, but would it still be convenient on a single machine or would it be better to just stick to OpenMP in that case? 
+Hence we run further tests with both MPI and OpenMP enabled:</paragraph>
+ <paragraph index="746" node_type="writer">- compiling line: mpiicpx -fopenmp -O3 -xHost -ffast-math -DITERATIONS=80000 -DOMP -D_MPI_ mandelbot.cpp</paragraph>
+ <paragraph index="747" node_type="writer">- exec line: mpiexec -np 1 ./a.out image</paragraph>
+ <paragraph index="748" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=80000</paragraph>
+ <paragraph index="749" node_type="writer">- number of threads: 20 (decided by scheduler)</paragraph>
+ <paragraph index="750" node_type="writer">- time taken: 34.5305 seconds</paragraph>
+ <paragraph index="752" node_type="writer">- compiling line: mpiicpx -fopenmp -O3 -xHost -ffast-math -DITERATIONS=80000 -DOMP -D_MPI_ mandelbot.cpp</paragraph>
+ <paragraph index="753" node_type="writer">- exec line: mpiexec -np 2 ./a.out image</paragraph>
+ <paragraph index="754" node_type="writer">- data size: RESOLUTION=1000, ITERATIONS=80000</paragraph>
+ <paragraph index="755" node_type="writer">- number of threads: 20 (decided by scheduler)</paragraph>
+ <paragraph index="756" node_type="writer">- time taken: 21.7537 seconds</paragraph>
+ <paragraph index="758" node_type="writer">We could see that there was some form of speedup, however it was most likely caused by the CPU exploiting the hyperthreading to hide some latencies.</paragraph>
+ <object index="760" name="Table5" object_type="table"/>
+ <paragraph index="762" node_type="writer" parent_index="760">Data size</paragraph>
+ <paragraph index="765" node_type="writer" parent_index="760">RESOLUTION=1000</paragraph>
+ <paragraph index="768" node_type="writer" parent_index="760">ITERATIONS=80000</paragraph>
+ <paragraph index="786" node_type="writer" parent_index="760">N processes</paragraph>
+ <paragraph index="789" node_type="writer" parent_index="760">Time spent</paragraph>
+ <paragraph index="792" node_type="writer" parent_index="760">Speedup T1/Tp</paragraph>
+ <paragraph index="795" node_type="writer" parent_index="760">Efficiency</paragraph>
+ <paragraph index="798" node_type="writer" parent_index="760">1</paragraph>
+ <paragraph index="801" node_type="writer" parent_index="760">34.53</paragraph>
+ <paragraph index="804" node_type="writer" parent_index="760">1</paragraph>
+ <paragraph index="807" node_type="writer" parent_index="760">1,00</paragraph>
+ <paragraph index="810" node_type="writer" parent_index="760">2</paragraph>
+ <paragraph index="813" node_type="writer" parent_index="760">21.75</paragraph>
+ <paragraph index="816" node_type="writer" parent_index="760">1.59</paragraph>
+ <paragraph index="819" node_type="writer" parent_index="760">0.79</paragraph>
+ <paragraph index="822" node_type="writer" parent_index="760">4</paragraph>
+ <paragraph index="825" node_type="writer" parent_index="760">20.54</paragraph>
+ <paragraph index="828" node_type="writer" parent_index="760">1.68</paragraph>
+ <paragraph index="831" node_type="writer" parent_index="760">0,42</paragraph>
+ <paragraph index="834" node_type="writer" parent_index="760">8</paragraph>
+ <paragraph index="837" node_type="writer" parent_index="760">19.53</paragraph>
+ <paragraph index="840" node_type="writer" parent_index="760">1.77</paragraph>
+ <paragraph index="843" node_type="writer" parent_index="760">0.22</paragraph>
+ <paragraph index="846" node_type="writer" parent_index="760">20</paragraph>
+ <paragraph index="849" node_type="writer" parent_index="760">19.72</paragraph>
+ <paragraph index="852" node_type="writer" parent_index="760">1.75</paragraph>
+ <paragraph index="855" node_type="writer" parent_index="760">0.09</paragraph>
+ <paragraph index="859" node_type="writer">When we tried to increase the number of processes we basically saw no further improvement.</paragraph>
+ <paragraph index="861" node_type="writer">Unfortunately, there was no way to test the efficiency of the combination of MPI with CUDA, even if our implementation supports using both at the same time, because there’s no point in doing that on a single machine (which is equipped with one GPU).</paragraph>
+ <paragraph index="862" node_type="writer">Conclusions</paragraph>
+ <paragraph index="863" node_type="writer">We observed that, in the best sequential case, our code performs the run in about 30 seconds, on an amount of data that from the original unoptimized sequential run is 8 times more.</paragraph>
+ <paragraph index="864" node_type="writer">By applying the pragma instructions to achieve better performance exploiting our processors via the OpenMP library, we observed an improvement that follows the increase of the number of threads. By just using 2 processors, we halved the time run, and we halved again at 12 processors usage.</paragraph>
+ <paragraph index="865" node_type="writer">The optimal number of threads to be used, without losing too much in terms of efficiency is 12. We can get better performance by increasing that number to the maximum number of processors, that is 20, but the gain is of just a few seconds, not so relevant.</paragraph>
+ <paragraph index="866" node_type="writer">Finally, by applying a number of processors greater than the one owned in the machine, we don’t observe any major overhead that significantly delays the time run of our code.</paragraph>
+ <paragraph index="868" node_type="writer">Regarding the accelerator we saw the difference from the OpenMP version when scaling over the resolution, that is the applying the same operation on a larger scale.</paragraph>
+ <paragraph index="869" node_type="writer">Also since we have the same amount of threads computed with the difference block size and grid size, we didn’t achieve significant differences in terms of speedup on several combinations of &lt;&lt;&lt;gridSize, blockSize&gt;&gt;&gt;.</paragraph>
+ <paragraph index="871" node_type="writer">When it comes to MPI, we saw that on a single machine it has similar behavior to OpenMP, with a slight overhead caused by the message passing and the heavier context switches. Even in this case, if we are fine with ~50% efficiency, the optimal number of processes to launch is 12. We saw how using MPI and OpenMP on the same machine can provide a small additional speedup, but it is clear that this is not the intended usage of the 2 libraries: there is probably no point in using MPI when all we have available is one single device, as OpenMP does the same thing with less overhead and with higher level instructions. We did not have the cluster available, so unfortunately in this report we are missing results representing the true potential of both libraries (just like for MPI+CUDA).</paragraph>
+</indexing>
